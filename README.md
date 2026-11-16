@@ -9,6 +9,10 @@ einen veganen High-Protein-Monatsplan; dessen 41 Gerichte sind als Startbiblioth
   Die App schlägt vor, wer dran ist (wer zuletzt am seltensten einkaufen war).
 - **Kasse:** Wer einkauft, trägt den Betrag ein. Aufgeteilt wird gleichmäßig oder nach Verbrauch (geplante Kalorien in
   den Einkaufstagen). Salden und Ausgleichszahlungen inklusive.
+- **Ziele:** Aus Gewicht, Größe, Alter, Aktivität und Ziel (abnehmen, halten, zunehmen, Muskelaufbau) berechnet die App
+  Mindestwerte für Kalorien und Protein (Mifflin-St Jeor). Eigene Werte gehen weiterhin.
+- **Vorschläge oder selbst planen:** Im Vorschlagsmodus füllt die App freie Mahlzeiten aus dem Fundus – abwechslungsreich
+  und passend zum Proteinziel, mit „Tauschen" pro Mahlzeit. Wer lieber selbst plant, schaltet das ab.
 - **Fortschritt:** Protein- und Kalorienziel pro Tag, Wochenübersicht, Serie. Sichtbar für niemanden, den Haushalt oder
   alle – jede Person entscheidet selbst. Wer sichtbar ist, kann angestupst werden (In-App und per Push).
 - **Gerichte:** Von Hand anlegen oder als JSON importieren, das ein KI-Assistent ausfüllt:
@@ -54,6 +58,7 @@ Auf dem iPhone funktionieren Push-Benachrichtigungen erst, wenn die App über Sa
 ```
 server/index.js    HTTP-Server, statische Dateien, Cookies, Schutz vor fremden Ursprüngen
 server/api.js      alle /api-Routen
+server/auto.js     Vorschlagsmodus: Gerichtauswahl und automatisches Füllen
 server/logic.js    Einkaufsliste, Kostenverteilung, Fortschritt, Serie
 server/db.js       SQLite-Schema, spielt server/seed.json ein
 server/push.js     Web Push (VAPID + aes128gcm) ohne Fremdbibliothek

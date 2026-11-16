@@ -224,3 +224,41 @@ test('Statische Dateien und Pfadschutz', async () => {
   const leak = await (await fetch(base + '/%2e%2e/server/api.js')).text();
   assert.ok(!leak.includes('createApi'));
 });
+
+test('Vorschlagsmodus füllt freie Mahlzeiten, tauscht und respektiert Entferntes', async () => {
+  const dora = client();
+  const D = await dora.post('/api/register', { name: 'dora', password: 'geheim-geheim' });
+  assert.equal((await dora.get(`/api/meals?from=${today}&to=${today}`)).meals.length, 0);
+  const me = await dora.patch('/api/me', { settings: { mode: 'auto', pGoal: 150, profile: { weight: 70, height: 175, age: 30, sex: 'f', activity: 2, goal: 'muscle' } } });
+  assert.equal(me.user.settings.profile.goal, 'muscle');
+  assert.equal((await dora.patch('/api/me', { settings: { profile: { weight: 5 } } })).status, 400);
+  const to = L.addDays(today, 13);
+  let meals = (await dora.get(`/api/meals?from=${today}&to=${to}`)).meals;
+  assert.equal(meals.length, 14 * 4);
+  assert.ok(meals.every(m => m.auto && m.eaters[0].userId === D.user.id));
+  // Ab Tag 2 ist das Mittag der Rest vom Vorabend
+  const day2 = meals.filter(m => m.date === L.addDays(today, 1));
+  const lunch = day2.find(m => m.slot === 'lunch');
+  assert.equal(lunch.leftoverOf, meals.find(m => m.date === today && m.slot === 'dinner').id);
+  // Abwechslung: 14 verschiedene warme Gerichte
+  assert.equal(new Set(meals.filter(m => m.slot === 'dinner').map(m => m.dishId)).size, 14);
+  // Erneutes Laden legt nichts doppelt an
+  assert.equal((await dora.get(`/api/meals?from=${today}&to=${to}`)).meals.length, 56);
+  // Tauschen ändert das Gericht und den Rest am Folgetag
+  const dinner = meals.find(m => m.date === today && m.slot === 'dinner');
+  const swapped = (await dora.post('/api/meals/' + dinner.id + '/swap', {})).meal;
+  assert.notEqual(swapped.dishId, dinner.dishId);
+  meals = (await dora.get(`/api/meals?from=${today}&to=${to}`)).meals;
+  assert.equal(meals.find(m => m.id === lunch.id).dishId, swapped.dishId);
+  // Entfernter Vorschlag kommt nicht wieder
+  const snack = meals.find(m => m.date === today && m.slot === 'snack');
+  await dora.del('/api/meals/' + snack.id);
+  assert.equal((await dora.get(`/api/meals?from=${today}&to=${today}`)).meals.filter(m => m.slot === 'snack').length, 0);
+  const sug = await dora.get(`/api/plan/suggestion?date=${today}&slot=snack`);
+  assert.ok(sug.dishId);
+  // Nur gewählte Mahlzeiten, kein Rest: Frühstück weg, Mittag wird eigenes Gericht
+  await dora.post('/api/plan/clear', { from: today });
+  await dora.patch('/api/me', { settings: { autoSlots: ['dinner'] } });
+  meals = (await dora.get(`/api/meals?from=${L.addDays(today, 3)}&to=${L.addDays(today, 3)}`)).meals;
+  assert.deepEqual(meals.map(m => m.slot), ['dinner']);
+});

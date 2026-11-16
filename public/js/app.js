@@ -6,6 +6,7 @@ import shop from './shop.js';
 import dishes from './dishes.js';
 import people from './people.js';
 import settings from './settings.js';
+import { openGoalSheet, openModeSheet } from './goals.js';
 
 const VIEWS = { today, plan, shop, dishes, people, settings };
 const TABS = [['today', 'Heute', ico.t_today], ['plan', 'Plan', ico.t_plan], ['shop', 'Einkauf', ico.t_shop], ['dishes', 'Gerichte', ico.t_dishes], ['people', 'Leute', ico.t_people]];
@@ -58,13 +59,14 @@ S.go = (view, opts = {}) => {
   S.refresh();
 };
 
-async function enter(me) {
+async function enter(me, fresh) {
   S.me = me;
   S.date = todayISO();
   await loadDishes().catch(fail);
   const h = location.hash.slice(1);
   S.go(VIEWS[h] ? h : 'today');
   if (pendingJoin && pendingJoin !== me.household.invite) askJoin(pendingJoin);
+  else if (fresh) openGoalSheet({ intro: 'Willkommen! Damit die App weiß, wie viel du am Tag brauchst, rechnen wir kurz deine Ziele aus.', onDone: openModeSheet });
   pendingJoin = '';
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
@@ -106,7 +108,7 @@ document.addEventListener('submit', async e => {
   try {
     if (name === 'auth') {
       authError = '';
-      try { await enter(await post(authMode === 'register' ? '/api/register' : '/api/login', data)); }
+      try { await enter(await post(authMode === 'register' ? '/api/register' : '/api/login', data), authMode === 'register'); }
       catch (err) { authError = err.message; S.render(); }
       return;
     }

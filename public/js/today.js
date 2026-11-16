@@ -4,7 +4,7 @@ import { S, get, post, patch, del, esc, ico, nf, pills, head, chip, avatar, sett
 import { SLOTS, SLOT_LABEL } from '/shared/dish.js';
 
 let meals = [], loaded = '';
-const open = {};
+const open = {}, seen = {};
 const myId = () => S.me.user.id;
 const mine = m => m.eaters.find(e => e.userId === myId());
 
@@ -45,10 +45,11 @@ function mealCard(m) {
   }
   let actions = '';
   if (d && !m.leftoverOf) actions += '<button class="linkbtn" data-act="recipe" data-id="' + m.id + '" aria-expanded="' + isOpen + '">' + ico.book + (isOpen ? 'Zubereitung ausblenden' : 'Zubereitung') + '</button>';
+  if (m.auto && d && !m.leftoverOf) actions += '<button class="linkbtn" data-act="swapMeal" data-id="' + m.id + '">' + ico.swap + 'Tauschen</button>';
   actions += '<button class="linkbtn" data-act="editMeal" data-id="' + m.id + '">' + ico.edit + 'Ändern</button>';
   return '<article class="meal' + (m.slot === 'dinner' ? ' dinner' : '') + (done ? ' done' : '') + '">' +
     '<div class="meal-top"><button class="check" role="checkbox" aria-checked="' + done + '" aria-label="' + esc(m.name) + ' gegessen" data-act="eat" data-id="' + m.id + '">' + ico.tick + '</button>' +
-    '<div><span class="eyebrow">' + SLOT_LABEL[m.slot] + '</span><h3>' + (m.leftoverOf ? 'Rest: ' : '') + esc(m.name) + '</h3>' +
+    '<div><span class="eyebrow">' + SLOT_LABEL[m.slot] + (m.auto && !m.leftoverOf ? ' · Vorschlag' : '') + '</span><h3>' + (m.leftoverOf ? 'Rest: ' : '') + esc(m.name) + '</h3>' +
     pills(m.protein * me.portions, m.kcal * me.portions, m.slot === 'dinner' && d && !m.leftoverOf ? d.minutes : 0) + '</div></div>' +
     body + '<div class="actions">' + actions + '</div></article>';
 }
@@ -72,8 +73,9 @@ function render() {
     if (m.cookId === myId() && !m.leftoverOf && !solo()) hints.push(['pot', '<b>Du kochst:</b> ' + esc(shortName(m.name)) + ', ' + portions(m.cook) + ' insgesamt.']);
     else if (m.leftoverPortions && solo()) hints.push(['pot', '<b>Mehr kochen:</b> ' + portions(m.cook) + ' ' + esc(shortName(m.name)) + ', der Rest ist dein Mittag morgen.']);
   }
-  if (loaded === date && !day.length) hints.push(['info', 'Für diesen Tag ist noch nichts geplant. Trag unten Mahlzeiten ein oder nimm unter <b>Plan</b> den fertigen Monatsplan.']);
-  if (hints.length) h += '<section class="stack">' + hints.map(([ic, t]) => '<div class="hint">' + ico[ic] + '<span>' + t + '</span></div>').join('') + '</section>';
+  if (loaded === date && !day.length) hints.push(['info', g.mode === 'auto' ? 'Vorschläge gibt es ab heute für bis zu vier Wochen im Voraus. Diesen Tag kannst du selbst füllen.' : 'Für diesen Tag ist noch nichts geplant. Trag unten Mahlzeiten ein, nimm unter <b>Plan</b> den fertigen Monatsplan oder schalte in den Einstellungen <b>Vorschläge</b> ein.']);
+  else if (loaded === date && my.length && planP < g.pGoal * 0.9) hints.push(['info', 'Geplant sind ' + nf(planP) + ' g Protein, zu deinem Ziel fehlen noch <b>' + nf(g.pGoal - planP) + ' g</b>. Eine größere Portion oder ein Extra schließt die Lücke.', 'amber']);
+  if (hints.length) h += '<section class="stack">' + hints.map(([ic, t, cl]) => '<div class="hint' + (cl ? ' ' + cl : '') + '">' + ico[ic] + '<span>' + t + '</span></div>').join('') + '</section>';
 
   h += '<section class="stack">';
   for (const slot of SLOTS) {
@@ -110,7 +112,7 @@ export async function openMealSheet({ date, slot, meal, dishId }) {
   const st = {
     id: meal ? meal.id : null, date: meal ? meal.date : date, slot: meal ? meal.slot : slot, dishId: meal ? meal.dishId : dishId || null,
     step: meal || dishId ? 'edit' : 'pick', q: '', all: false, custom: !!(meal && meal.custom), leftoverOf: meal ? meal.leftoverOf : null,
-    eaters: {}, cookId: meal ? meal.cookId : null, left: new Set(), leftOrig: '', confirmDel: false
+    seen: [], eaters: {}, cookId: meal ? meal.cookId : null, left: new Set(), leftOrig: '', confirmDel: false
   };
   if (meal) for (const e of meal.eaters) st.eaters[e.userId] = e.portions;
   else if (slot === 'dinner') for (const m of members()) st.eaters[m.id] = defPortion(m.id);
@@ -137,12 +139,13 @@ export async function openMealSheet({ date, slot, meal, dishId }) {
   const render = () => {
     if (st.step === 'pick') {
       return '<div class="field"><input class="input" type="search" placeholder="Gericht suchen" data-input="q" value="' + esc(st.q) + '" aria-label="Gericht suchen"></div>' +
-        '<div class="chips">' + chip(SLOT_LABEL[st.slot], !st.all, 'data-act="all" data-v="0"') + chip('Alle Gerichte', st.all, 'data-act="all" data-v="1"') + '</div>' +
+        '<div class="chips">' + chip(SLOT_LABEL[st.slot], !st.all, 'data-act="all" data-v="0"') + chip('Alle Gerichte', st.all, 'data-act="all" data-v="1"') +
+        (SLOTS.includes(st.slot) ? '<button class="linkbtn" data-act="suggest">' + ico.swap + 'Vorschlagen lassen</button>' : '') + '</div>' +
         '<div class="card"><div class="rows" id="dishlist">' + dishList() + '</div></div>';
     }
     const d = S.dishById.get(st.dishId) || (meal && meal.dish);
     let h = '<div class="card"><div class="split"><h3>' + (st.leftoverOf ? 'Rest: ' : '') + esc(d ? d.name : meal.name) + '</h3></div>' + (d ? pills(d.protein, d.kcal, d.minutes) + '<span class="note">Werte pro Portion</span>' : '') +
-      (st.custom || st.leftoverOf ? '' : '<div class="actions"><button class="linkbtn" data-act="repick">Anderes Gericht</button></div>') + '</div>';
+      (st.custom || st.leftoverOf ? '' : '<div class="actions"><button class="linkbtn" data-act="repick">Anderes Gericht</button><button class="linkbtn" data-act="suggest">' + ico.swap + 'Anderer Vorschlag</button></div>') + '</div>';
     if (!st.leftoverOf) h += '<div class="row2"><div class="field"><label for="m-date">Tag</label><input id="m-date" type="date" data-change="date" value="' + st.date + '"></div>' +
       '<div class="field"><label for="m-slot">Mahlzeit</label><select id="m-slot" data-change="slot">' + SLOTS.map(s => '<option value="' + s + '"' + (s === st.slot ? ' selected' : '') + '>' + SLOT_LABEL[s] + '</option>').join('') + '</select></div></div>';
     if (!st.custom) {
@@ -176,6 +179,12 @@ export async function openMealSheet({ date, slot, meal, dishId }) {
       all: el => { st.all = el.dataset.v === '1'; drawSheet(); },
       pick: el => { st.dishId = +el.dataset.id; st.step = 'edit'; drawSheet(); },
       repick: () => { st.step = 'pick'; st.all = true; drawSheet(); },
+      suggest: async () => {
+        if (st.dishId) st.seen.push(st.dishId);
+        const r = await get('/api/plan/suggestion?date=' + st.date + '&slot=' + st.slot + '&not=' + st.seen.join(','));
+        if (!r.dishId) return toast('Für diese Mahlzeit ist nichts im Fundus.', true);
+        st.dishId = r.dishId; st.step = 'edit'; drawSheet();
+      },
       eater: el => { const id = +el.dataset.id; if (st.eaters[id] != null) delete st.eaters[id]; else st.eaters[id] = defPortion(id); drawSheet(); },
       step: el => { const id = +el.dataset.id; st.eaters[id] = Math.min(10, Math.max(0.5, st.eaters[id] + (+el.dataset.d))); drawSheet(); },
       cook: el => { st.cookId = el.dataset.id ? +el.dataset.id : null; drawSheet(); },
@@ -223,6 +232,11 @@ const actions = {
     const m = find(el.dataset.id), e = mine(m);
     e.eaten = !e.eaten; S.render(); // sofort zeigen, Server bestätigt
     try { put((await post('/api/meals/' + m.id + '/eaten', { eaten: e.eaten })).meal); } catch (err) { e.eaten = !e.eaten; S.render(); throw err; }
+  },
+  swapMeal: async el => {
+    const m = find(el.dataset.id);
+    (seen[m.id] = seen[m.id] || []).push(m.dishId);
+    put((await post('/api/meals/' + m.id + '/swap', { seen: seen[m.id] })).meal);
   },
   addMeal: el => openMealSheet({ date: S.date, slot: el.dataset.slot }),
   editMeal: el => openMealSheet({ meal: find(el.dataset.id) }),

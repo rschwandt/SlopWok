@@ -4,6 +4,7 @@ import { promisify } from 'node:util';
 import { validateDish, SLOTS } from '../shared/dish.js';
 import * as L from './logic.js';
 import { sendPush, generateVapidKeys } from './push.js';
+import { makeAuto } from './auto.js';
 
 const scrypt = promisify(crypto.scrypt);
 
@@ -78,6 +79,7 @@ export function createApi(db, cfg = {}) {
   if (!vapid) db.kv.set('vapid', (vapid = generateVapidKeys()));
   const subject = cfg.vapidSubject || 'mailto:admin@example.com';
   const pushFetch = cfg.pushFetch || fetch;
+  const auto = makeAuto(db);
 
   // Benachrichtigung speichern und (ohne darauf zu warten) als Push verschicken.
   function notify(userId, fromId, kind, msg, title) {
@@ -165,6 +167,18 @@ export function createApi(db, cfg = {}) {
       if (n.portion != null && +n.portion >= 0.5 && +n.portion <= 4) s.portion = Math.round(+n.portion * 4) / 4;
       if (['none', 'household', 'all'].includes(n.share)) s.share = n.share;
       if (typeof n.nudge === 'boolean') s.nudge = n.nudge;
+      if (['manual', 'auto'].includes(n.mode)) s.mode = n.mode;
+      if (Array.isArray(n.autoSlots)) s.autoSlots = SLOTS.filter(x => n.autoSlots.includes(x));
+      if (typeof n.autoLeftover === 'boolean') s.autoLeftover = n.autoLeftover;
+      if (n.profile === null) s.profile = null;
+      else if (n.profile && typeof n.profile === 'object') {
+        const p = n.profile, within = (v, lo, hi) => (Number(v) >= lo && Number(v) <= hi ? Math.round(Number(v) * 10) / 10 : bad('Bitte die Angaben prüfen.'));
+        s.profile = {
+          weight: within(p.weight, 30, 300), height: within(p.height, 120, 230), age: within(p.age, 14, 99),
+          sex: ['m', 'f', 'x'].includes(p.sex) ? p.sex : 'x', activity: within(p.activity, 1, 4),
+          goal: ['lose', 'keep', 'gain', 'muscle'].includes(p.goal) ? p.goal : 'keep'
+        };
+      }
       db.run('UPDATE users SET settings = ? WHERE id = ?', JSON.stringify(s), c.user.id);
       if (s.share !== 'all') db.run('DELETE FROM follows WHERE target_id = ? AND user_id NOT IN (SELECT id FROM users WHERE household_id = ?)', c.user.id, c.user.household_id);
     }
@@ -283,6 +297,7 @@ export function createApi(db, cfg = {}) {
   route('GET', '/api/meals', c => {
     const from = date(c.query.from), to = date(c.query.to);
     if (L.diffDays(from, to) < 0 || L.diffDays(from, to) > 62) bad('Zeitraum zu groß.');
+    auto.fill(c, to);
     return { meals: L.mealsInRange(db, c.hh.id, from, to) };
   });
   route('POST', '/api/meals', c => {
@@ -331,8 +346,30 @@ export function createApi(db, cfg = {}) {
     return { meal: oneMeal(m.id) || null };
   });
   route('DELETE', '/api/meals/:id', c => {
-    db.run('DELETE FROM meals WHERE id = ?', hhMeal(c, c.params.id).id);
+    const m = hhMeal(c, c.params.id);
+    db.tx(() => {
+      // Im Vorschlagsmodus soll ein entfernter Vorschlag nicht sofort wiederkommen
+      if (m.date >= c.today && MEAL_SLOTS.includes(m.slot))
+        for (const e of db.all('SELECT user_id FROM meal_eaters WHERE meal_id = ?', m.id))
+          db.run('INSERT OR IGNORE INTO auto_skips (user_id, date, slot) VALUES (?, ?, ?)', e.user_id, m.date, m.slot);
+      db.run('DELETE FROM auto_skips WHERE date < ?', L.addDays(c.today, -2));
+      db.run('DELETE FROM meals WHERE id = ?', m.id);
+    });
     return { ok: true };
+  });
+  // Anderes Gericht für dieselbe Mahlzeit vorschlagen lassen
+  route('POST', '/api/meals/:id/swap', c => {
+    const m = hhMeal(c, c.params.id);
+    if (!m.dish_id || m.leftover_of || !SLOTS.includes(m.slot)) bad('Diese Mahlzeit lässt sich nicht tauschen.');
+    const seen = Array.isArray(c.body.seen) ? c.body.seen.map(Number).slice(0, 30) : [];
+    const next = auto.suggest(c, m.slot, m.date, [m.dish_id, ...seen]) || auto.suggest(c, m.slot, m.date, [m.dish_id]) || bad('Kein anderes passendes Gericht im Fundus.');
+    db.run('UPDATE meals SET dish_id = ? WHERE id = ? OR leftover_of = ?', next, m.id, m.id);
+    return { meal: oneMeal(m.id) };
+  });
+  route('GET', '/api/plan/suggestion', c => {
+    const slot = SLOTS.includes(c.query.slot) ? c.query.slot : bad('Ungültige Mahlzeit.');
+    const not = String(c.query.not || '').split(',').map(Number).filter(Boolean).slice(0, 30);
+    return { dishId: auto.suggest(c, slot, date(c.query.date), not) || auto.suggest(c, slot, date(c.query.date), []) };
   });
   route('POST', '/api/meals/:id/eaten', c => {
     const m = hhMeal(c, c.params.id);
@@ -415,7 +452,11 @@ export function createApi(db, cfg = {}) {
       mealCount: meals.filter(m => m.dish && !m.leftoverOf).length
     };
   }
-  route('GET', '/api/shopping', c => shoppingPayload(c, date(c.query.date || c.today)));
+  route('GET', '/api/shopping', c => {
+    const d = date(c.query.date || c.today);
+    auto.fill(c, L.tripRange(L.hhSettings(c.hh).shopDays, d).to);
+    return shoppingPayload(c, d);
+  });
   route('POST', '/api/shopping/:from/shopper', c => {
     const trip = ensureTrip(c, c.params.from);
     const id = c.body.userId == null ? null : int(c.body.userId);

@@ -1,5 +1,7 @@
 // Ansicht „Einstellungen": Profil, Ziele, Privatsphäre, Benachrichtigungen, Einkaufstage, Konto.
 import { S, get, post, patch, esc, ico, head, chip, toast, solo, WD, fmtCount } from './core.js';
+import { SLOTS, SLOT_LABEL } from '/shared/dish.js';
+import { openGoalSheet, GOALS } from './goals.js';
 
 let push = { supported: false, state: 'unknown', busy: false }, pwMsg = '';
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
@@ -39,10 +41,21 @@ function render() {
   let h = head('@' + esc(u.name), 'Einstellungen', '<button class="iconbtn" data-act="nav" data-v="today" aria-label="Zurück">' + ico.close + '</button>');
   h += '<div class="card"><h2>Profil</h2><form class="field" data-form="display"><label for="s-display">Anzeigename</label><div class="inline"><input class="input" id="s-display" name="display" maxlength="40" required value="' + esc(u.display) + '"><button class="linkbtn">Speichern</button></div></form></div>';
 
-  h += '<div class="card"><h2>Deine Ziele</h2><div class="row2"><div class="field"><label for="pGoal">Protein pro Tag (g)</label><input type="number" id="pGoal" data-change="pGoal" inputmode="numeric" min="20" max="400" value="' + s.pGoal + '"></div>' +
+  const prof = s.profile;
+  h += '<div class="card"><h2>Deine Ziele</h2>' +
+    (prof ? '<p class="note">Berechnet für <b>' + esc((GOALS.find(x => x[0] === prof.goal) || [])[1] || '') + '</b> bei ' + prof.weight + ' kg und ' + prof.height + ' cm. Ändert sich dein Gewicht oder Ziel, rechne neu.</p>'
+      : '<p class="note">Die Werte unten sind ein allgemeiner Startwert. Lass sie für dich ausrechnen oder trag eigene ein.</p>') +
+    '<div class="actions"><button class="btn" data-act="calc">' + (prof ? 'Neu berechnen' : 'Ziele berechnen lassen') + '</button></div><div class="row2"><div class="field"><label for="pGoal">Protein pro Tag (g)</label><input type="number" id="pGoal" data-change="pGoal" inputmode="numeric" min="20" max="400" value="' + s.pGoal + '"></div>' +
     '<div class="field"><label for="kGoal">Kalorien pro Tag</label><input type="number" id="kGoal" data-change="kGoal" inputmode="numeric" min="800" max="8000" step="50" value="' + s.kGoal + '"></div></div>' +
     '<div class="field"><span class="lbl">Deine übliche Portion beim warmen Gericht</span><div class="chips">' + [1, 1.5, 2, 2.5].map(v => chip(fmtCount(v) + '×', s.portion === v, 'data-act="portion" data-v="' + v + '"')).join('') + '</div>' +
     '<span class="note">Wird vorausgefüllt, wenn du oder jemand im Haushalt ein Essen mit dir plant. Pro Mahlzeit änderbar.</span></div></div>';
+
+  h += '<div class="card"><h2>Planung</h2>' + seg('mode', s.mode, [
+    ['auto', 'Vorschläge bekommen', 'Freie Mahlzeiten der kommenden Wochen füllt die App aus dem Fundus. Tauschen und ändern geht immer.'],
+    ['manual', 'Selbst planen', 'Nichts passiert automatisch. Du wählst jede Mahlzeit selbst oder trägst den Monatsplan ein.']]) +
+    (s.mode === 'auto' ? '<div class="field"><span class="lbl">Vorschläge für</span><div class="chips">' + SLOTS.map(x => chip(SLOT_LABEL[x], s.autoSlots.includes(x), 'data-act="autoSlot" data-v="' + x + '"')).join('') + '</div></div>' +
+      '<div class="seg"><button data-act="autoLeftover" aria-pressed="' + s.autoLeftover + '"><b>Mittag ist der Rest vom Vorabend</b><small>Abends wird eine Portion mehr gekocht. Ausgeschaltet bekommst du ein eigenes Mittagsgericht.</small></button></div>' +
+      '<p class="note">Bereits geplante Mahlzeiten bleiben stehen. Entfernst du einen Vorschlag, bleibt der Platz frei.' + (solo() ? '' : ' Das warme Gericht wird für alle im Haushalt vorgeschlagen, die Vorschläge eingeschaltet haben; gibt es an einem Tag schon eins, kommt kein zweites dazu.') + '</p>' : '') + '</div>';
 
   h += '<div class="card"><h2>Privatsphäre</h2><div class="field"><span class="lbl">Wer darf deinen Fortschritt sehen?</span>' + seg('share', s.share, [
     ['none', 'Niemand', 'Nur du siehst, was du gegessen und geschafft hast.'],
@@ -80,6 +93,13 @@ const saveUser = async settings => { S.me = await patch('/api/me', { settings })
 const saveHh = async settings => { S.me = await patch('/api/household', { settings }); S.render(); };
 const actions = {
   portion: el => saveUser({ portion: +el.dataset.v }),
+  calc: () => openGoalSheet(),
+  mode: el => saveUser({ mode: el.dataset.v }),
+  autoLeftover: () => saveUser({ autoLeftover: !S.me.user.settings.autoLeftover }),
+  autoSlot: el => {
+    const cur = S.me.user.settings.autoSlots, v = el.dataset.v;
+    return saveUser({ autoSlots: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] });
+  },
   share: el => saveUser({ share: el.dataset.v }),
   nudge: () => saveUser({ nudge: !S.me.user.settings.nudge }),
   split: el => saveHh({ split: el.dataset.v }),

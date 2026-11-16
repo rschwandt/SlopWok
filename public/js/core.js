@@ -103,6 +103,7 @@ export const ico = {
   tick: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>', 3), plus: svg('<path d="M12 5v14M5 12h14"/>', 2.4), close: svg('<path d="M6 6l12 12M18 6L6 18"/>', 2.2),
   book: svg('<path d="M5 4h10a4 4 0 014 4v12H9a4 4 0 01-4-4z"/><path d="M5 16a4 4 0 014-4h10"/>'),
   pot: svg('<path d="M4 10h16v5a5 5 0 01-5 5H9a5 5 0 01-5-5z"/><path d="M2 10h20M9 6c0-1 1-2 1-3M14 6c0-1 1-2 1-3"/>'),
+  swap: svg('<path d="M4 8h13l-3-3M20 16H7l3 3"/>'),
   edit: svg('<path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13 7l4 4"/>'),
   info: svg('<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>'),
   trash: svg('<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>'),

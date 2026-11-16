@@ -80,6 +80,11 @@ CREATE TABLE IF NOT EXISTS push_subs (
   endpoint TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   p256dh TEXT NOT NULL, auth TEXT NOT NULL, created INTEGER NOT NULL
 );
+-- Vorschlagsmodus: hier wurde ein Vorschlag bewusst entfernt und soll nicht wiederkommen
+CREATE TABLE IF NOT EXISTS auto_skips (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, date TEXT NOT NULL, slot TEXT NOT NULL,
+  PRIMARY KEY (user_id, date, slot)
+);
 CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 `;
 
@@ -88,6 +93,9 @@ export function openDb(file) {
   const db = new DatabaseSync(file);
   db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 3000;');
   db.exec(SCHEMA);
+  // Nachträglich ergänzte Spalten für Datenbanken aus älteren Versionen
+  const hasCol = (t, c) => db.prepare(`PRAGMA table_info(${t})`).all().some(r => r.name === c);
+  if (!hasCol('meals', 'auto')) db.exec('ALTER TABLE meals ADD COLUMN auto INTEGER NOT NULL DEFAULT 0');
 
   const cache = new Map();
   const stmt = sql => { let s = cache.get(sql); if (!s) cache.set(sql, (s = db.prepare(sql))); return s; };

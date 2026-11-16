@@ -9,7 +9,11 @@ export const wdOf = iso => (new Date(parseD(iso)).getUTCDay() + 6) % 7; // Monta
 export const diffDays = (a, b) => Math.round((parseD(b) - parseD(a)) / DAY);
 const WD = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
-export const DEFAULT_USER = { pGoal: 130, kGoal: 2800, portion: 1, share: 'household', nudge: true };
+// mode: 'manual' = selbst planen, 'auto' = freie Mahlzeiten werden aus dem Fundus vorgeschlagen
+export const DEFAULT_USER = {
+  pGoal: 130, kGoal: 2800, portion: 1, share: 'household', nudge: true,
+  mode: 'manual', autoSlots: ['breakfast', 'lunch', 'snack', 'dinner'], autoLeftover: true, profile: null
+};
 export const DEFAULT_HH = { shopDays: [0, 2, 5], split: 'equal' };
 export const userSettings = u => ({ ...DEFAULT_USER, ...JSON.parse(u.settings || '{}') });
 export const hhSettings = h => ({ ...DEFAULT_HH, ...JSON.parse(h.settings || '{}') });
@@ -24,7 +28,7 @@ export function loadMeals(db, where, params) {
     const dish = r.dish_data ? { id: r.dish_id, ...JSON.parse(r.dish_data) } : null;
     const custom = r.custom ? JSON.parse(r.custom) : null;
     const m = {
-      id: r.id, householdId: r.household_id, date: r.date, slot: r.slot, dishId: r.dish_id, cookId: r.cook_id, leftoverOf: r.leftover_of,
+      id: r.id, householdId: r.household_id, date: r.date, slot: r.slot, dishId: r.dish_id, cookId: r.cook_id, leftoverOf: r.leftover_of, auto: !!r.auto,
       name: dish ? dish.name : custom ? custom.name : '?', protein: dish ? dish.protein : custom ? custom.protein : 0,
       kcal: dish ? dish.kcal : custom ? custom.kcal : 0, dish, custom: !!custom, eaters: [], leftoverPortions: 0
     };
