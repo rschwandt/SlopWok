@@ -1,0 +1,3168 @@
+{
+ "dishes": [
+  {
+   "key": "w0d0",
+   "name": "Chili sin Carne mit Reis und Sojajoghurt",
+   "slot": "dinner",
+   "minutes": 40,
+   "protein": 44,
+   "kcal": 850,
+   "tags": [
+    "vegan",
+    "Klassiker zum Doppeltkochen"
+   ],
+   "ingredients": [
+    {
+     "name": "Sojaschnetzel (grob)",
+     "amount": 60,
+     "unit": "g",
+     "category": "huelsen",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Kidneybohnen",
+     "amount": 120,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 250,
+      "label": "Dose, 250 g abgetropft"
+     }
+    },
+    {
+     "name": "Reis",
+     "amount": 80,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 1000,
+      "label": "Pack 1 kg"
+     }
+    },
+    {
+     "name": "Soja-Skyr / -Joghurt",
+     "amount": 50,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 500,
+      "label": "Becher 500 g"
+     }
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    },
+    {
+     "name": "Paprika",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Gehackte Tomaten",
+     "amount": 200,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 400,
+      "label": "Dose 400 g"
+     }
+    },
+    {
+     "name": "Mais",
+     "amount": 60,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 285,
+      "label": "Dose, 285 g abgetropft"
+     }
+    }
+   ],
+   "basics": [
+    "Gemüsebrühe",
+    "Sojasoße",
+    "Tomatenmark",
+    "Kreuzkümmel",
+    "Paprikapulver",
+    "Chiliflocken",
+    "Olivenöl"
+   ],
+   "steps": [
+    "Sojaschnetzel 10 Min. in heißer Gemüsebrühe mit einem Schuss Sojasoße einweichen, dann gut ausdrücken.",
+    "Reis nach Packung kochen.",
+    "Zwiebel, Knoblauch und Paprika in Öl anbraten. Schnetzel dazu und richtig braun rösten, dann Tomatenmark und Gewürze 1 Min. mitrösten.",
+    "Tomaten, abgespülte Kidneybohnen und Mais dazu, 20 Min. köcheln lassen.",
+    "Mit Reis und einem Klecks Sojajoghurt servieren."
+   ]
+  },
+  {
+   "key": "w0d1",
+   "name": "Tofu-Erdnuss-Curry mit Spinat und Reis",
+   "slot": "dinner",
+   "minutes": 35,
+   "protein": 41,
+   "kcal": 900,
+   "tags": [
+    "vegan",
+    "Klassiker zum Doppeltkochen"
+   ],
+   "ingredients": [
+    {
+     "name": "Tofu natur",
+     "amount": 200,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Erdnussmus",
+     "amount": 20,
+     "unit": "g",
+     "category": "nuss",
+     "pack": {
+      "size": 250,
+      "label": "Glas 250 g"
+     }
+    },
+    {
+     "name": "Reis",
+     "amount": 80,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 1000,
+      "label": "Pack 1 kg"
+     }
+    },
+    {
+     "name": "Kokosmilch",
+     "amount": 100,
+     "unit": "ml",
+     "category": "dose",
+     "pack": {
+      "size": 400,
+      "label": "Dose 400 ml"
+     }
+    },
+    {
+     "name": "Blattspinat (TK)",
+     "amount": 100,
+     "unit": "g",
+     "category": "tk",
+     "pack": {
+      "size": 450,
+      "label": "Pack 450 g"
+     }
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    },
+    {
+     "name": "Ingwer",
+     "amount": 10,
+     "unit": "g",
+     "category": "gemuese"
+    },
+    {
+     "name": "Limette",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Rote Currypaste",
+    "Sojasoße",
+    "Rapsöl"
+   ],
+   "steps": [
+    "Tofu 10 Min. pressen, würfeln und in Öl rundum knusprig braten. Herausnehmen.",
+    "Reis kochen.",
+    "Zwiebel, Knoblauch und Ingwer anschwitzen, 1 EL Currypaste 1 Min. mitrösten.",
+    "Kokosmilch, Erdnussmus, 1 EL Sojasoße und 100 ml Wasser glatt rühren, TK-Spinat darin 5 Min. köcheln.",
+    "Tofu unterheben, mit Limettensaft abschmecken und mit Reis servieren."
+   ]
+  },
+  {
+   "key": "w0d2",
+   "name": "Rote-Linsen-Dal mit knusprigen Tempeh-Würfeln",
+   "slot": "dinner",
+   "minutes": 35,
+   "protein": 44,
+   "kcal": 800,
+   "tags": [
+    "vegan",
+    "Klassiker zum Doppeltkochen"
+   ],
+   "ingredients": [
+    {
+     "name": "Rote Linsen",
+     "amount": 80,
+     "unit": "g",
+     "category": "huelsen",
+     "pack": {
+      "size": 500,
+      "label": "Pack 500 g"
+     }
+    },
+    {
+     "name": "Tempeh",
+     "amount": 100,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     },
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Reis",
+     "amount": 60,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 1000,
+      "label": "Pack 1 kg"
+     }
+    },
+    {
+     "name": "Gehackte Tomaten",
+     "amount": 100,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 400,
+      "label": "Dose 400 g"
+     }
+    },
+    {
+     "name": "Kokosmilch",
+     "amount": 50,
+     "unit": "ml",
+     "category": "dose",
+     "pack": {
+      "size": 400,
+      "label": "Dose 400 ml"
+     }
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    },
+    {
+     "name": "Ingwer",
+     "amount": 10,
+     "unit": "g",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Kurkuma",
+    "Kreuzkümmel",
+    "Garam Masala",
+    "Sojasoße",
+    "Rapsöl"
+   ],
+   "steps": [
+    "Reis kochen.",
+    "Zwiebel, Knoblauch und Ingwer anschwitzen, je 1 TL Kurkuma, Kreuzkümmel und Garam Masala kurz mitrösten.",
+    "Linsen abspülen und mit Tomaten, Kokosmilch und 300 ml Wasser pro Portion 15–20 Min. sämig köcheln.",
+    "Tempeh würfeln, mit 1 EL Sojasoße marinieren und in Öl 6–8 Min. knusprig braten.",
+    "Dal salzen, Tempeh obendrauf, mit Reis servieren."
+   ]
+  },
+  {
+   "key": "w0d3",
+   "name": "Vollkornspaghetti mit Soja-Linsen-Bolognese",
+   "slot": "dinner",
+   "minutes": 30,
+   "protein": 43,
+   "kcal": 850,
+   "tags": [
+    "vegan",
+    "Klassiker zum Doppeltkochen"
+   ],
+   "ingredients": [
+    {
+     "name": "Vollkornspaghetti",
+     "amount": 100,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 500,
+      "label": "Pack 500 g"
+     }
+    },
+    {
+     "name": "Sojagranulat (fein)",
+     "amount": 40,
+     "unit": "g",
+     "category": "huelsen",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Rote Linsen",
+     "amount": 40,
+     "unit": "g",
+     "category": "huelsen",
+     "pack": {
+      "size": 500,
+      "label": "Pack 500 g"
+     }
+    },
+    {
+     "name": "Gehackte Tomaten",
+     "amount": 250,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 400,
+      "label": "Dose 400 g"
+     }
+    },
+    {
+     "name": "Möhre",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    }
+   ],
+   "basics": [
+    "Gemüsebrühe",
+    "Sojasoße",
+    "Tomatenmark",
+    "Oregano",
+    "Olivenöl"
+   ],
+   "steps": [
+    "Sojagranulat 10 Min. in heißer Brühe mit Sojasoße einweichen, ausdrücken.",
+    "Zwiebel, Knoblauch und fein gewürfelte Möhre in Öl anbraten. Granulat dazu und kräftig anrösten, Tomatenmark mitrösten.",
+    "Tomaten, abgespülte rote Linsen und 150 ml Wasser dazu, 15–20 Min. köcheln, mit Oregano würzen.",
+    "Spaghetti kochen und mit der Sauce mischen."
+   ]
+  },
+  {
+   "key": "w0d4",
+   "name": "Seitan-Gyros mit Kichererbsen, Tzatziki und Pita",
+   "slot": "dinner",
+   "minutes": 25,
+   "protein": 52,
+   "kcal": 900,
+   "tags": [
+    "vegan",
+    "Klassiker zum Doppeltkochen"
+   ],
+   "ingredients": [
+    {
+     "name": "Seitan",
+     "amount": 150,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Kichererbsen",
+     "amount": 100,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 250,
+      "label": "Dose, 250 g abgetropft"
+     }
+    },
+    {
+     "name": "Soja-Skyr / -Joghurt",
+     "amount": 100,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 500,
+      "label": "Becher 500 g"
+     }
+    },
+    {
+     "name": "Pita",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "brot",
+     "pack": {
+      "size": 4,
+      "label": "Pack 4 Stk"
+     }
+    },
+    {
+     "name": "Salatgurke",
+     "amount": 0.33,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Tomate",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    },
+    {
+     "name": "Zitrone",
+     "amount": 0.25,
+     "unit": "Stk",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Gyros-Gewürz",
+    "Olivenöl",
+    "Salz"
+   ],
+   "steps": [
+    "Seitan in dünne Streifen schneiden und mit Öl und Gyros-Gewürz mischen.",
+    "Tzatziki: Gurke raspeln und ausdrücken, mit Sojajoghurt, Knoblauch, Zitronensaft und Salz verrühren.",
+    "Seitan in der heißen Pfanne 5–6 Min. knusprig braten, Kichererbsen die letzten 3 Min. mitbraten.",
+    "Pita kurz aufbacken und mit Gyros, Tomate, Zwiebelringen und Tzatziki servieren."
+   ]
+  },
+  {
+   "key": "w0d5",
+   "name": "Tempeh-Bratkartoffeln mit Rosenkohl und Senf-Dip",
+   "slot": "dinner",
+   "minutes": 40,
+   "protein": 42,
+   "kcal": 850,
+   "tags": [
+    "vegan",
+    "Klassiker zum Doppeltkochen"
+   ],
+   "ingredients": [
+    {
+     "name": "Tempeh",
+     "amount": 150,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     },
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Kartoffeln",
+     "amount": 400,
+     "unit": "g",
+     "category": "gemuese",
+     "pack": {
+      "size": 1000,
+      "label": "Netz 1 kg"
+     }
+    },
+    {
+     "name": "Rosenkohl",
+     "amount": 150,
+     "unit": "g",
+     "category": "gemuese",
+     "pack": {
+      "size": 500,
+      "label": "Netz 500 g"
+     }
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Soja-Skyr / -Joghurt",
+     "amount": 50,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 500,
+      "label": "Becher 500 g"
+     }
+    }
+   ],
+   "basics": [
+    "Senf",
+    "Ahornsirup",
+    "Sojasoße",
+    "Majoran",
+    "Rapsöl"
+   ],
+   "steps": [
+    "Kartoffeln in Scheiben schneiden und in Öl bei mittlerer Hitze 20 Min. braten, öfter wenden.",
+    "Rosenkohl halbieren und 5 Min. in Salzwasser vorkochen.",
+    "Tempeh würfeln, mit Sojasoße marinieren und mit Zwiebel und Rosenkohl knusprig braten. Alles mischen, mit Majoran würzen.",
+    "Dip: Sojajoghurt mit 1 TL Senf und etwas Ahornsirup verrühren."
+   ]
+  },
+  {
+   "key": "w0d6",
+   "name": "Ofen-Gnocchi mit weißen Bohnen, Räuchertofu und Tomate",
+   "slot": "dinner",
+   "minutes": 35,
+   "protein": 43,
+   "kcal": 900,
+   "tags": [
+    "vegan",
+    "Klassiker zum Doppeltkochen"
+   ],
+   "ingredients": [
+    {
+     "name": "Gnocchi",
+     "amount": 300,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 500,
+      "label": "Pack 500 g"
+     }
+    },
+    {
+     "name": "Räuchertofu",
+     "amount": 150,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Weiße Bohnen",
+     "amount": 120,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 250,
+      "label": "Dose, 250 g abgetropft"
+     }
+    },
+    {
+     "name": "Tomate",
+     "amount": 2,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 2,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    }
+   ],
+   "basics": [
+    "Olivenöl",
+    "Oregano",
+    "Salz",
+    "Pfeffer"
+   ],
+   "steps": [
+    "Ofen auf 220 °C vorheizen.",
+    "Gnocchi, Räuchertofu-Würfel, abgespülte Bohnen, Tomatenstücke, Zwiebel und Knoblauch mit 2 EL Öl, Oregano, Salz und Pfeffer auf einem Blech mischen.",
+    "25 Min. backen, nach der Hälfte wenden, bis alles goldbraun ist."
+   ]
+  },
+  {
+   "key": "w1d0",
+   "name": "Mapo Tofu mit Shiitake und Reis",
+   "slot": "dinner",
+   "minutes": 25,
+   "protein": 43,
+   "kcal": 800,
+   "tags": [
+    "vegan",
+    "Asiatisch & mexikanisch"
+   ],
+   "ingredients": [
+    {
+     "name": "Tofu natur",
+     "amount": 250,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Shiitake",
+     "amount": 75,
+     "unit": "g",
+     "category": "gemuese",
+     "pack": {
+      "size": 150,
+      "label": "Schale 150 g"
+     },
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Reis",
+     "amount": 80,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 1000,
+      "label": "Pack 1 kg"
+     }
+    },
+    {
+     "name": "Frühlingszwiebeln",
+     "amount": 2,
+     "unit": "Stange",
+     "category": "gemuese",
+     "pack": {
+      "size": 6,
+      "label": "Bund"
+     }
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 2,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    },
+    {
+     "name": "Ingwer",
+     "amount": 10,
+     "unit": "g",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Chili-Bohnenpaste (Doubanjiang)",
+    "Sojasoße",
+    "Speisestärke",
+    "Sesamöl",
+    "Chiliflocken"
+   ],
+   "steps": [
+    "Reis kochen.",
+    "Tofu würfeln und 2 Min. in heißem Salzwasser ziehen lassen, abgießen.",
+    "Shiitake, Knoblauch und Ingwer in Öl anbraten, 1–2 EL Bohnenpaste mitrösten.",
+    "200 ml Wasser und 1 EL Sojasoße dazu, Tofu einlegen, 5 Min. köcheln, mit 1 TL Stärke binden.",
+    "Mit Sesamöl und Frühlingszwiebeln auf Reis servieren."
+   ]
+  },
+  {
+   "key": "w1d1",
+   "name": "Burrito-Bowl mit Tofu-Chorizo, schwarzen Bohnen, Mais und Guacamole",
+   "slot": "dinner",
+   "minutes": 35,
+   "protein": 40,
+   "kcal": 950,
+   "tags": [
+    "vegan",
+    "Asiatisch & mexikanisch"
+   ],
+   "ingredients": [
+    {
+     "name": "Tofu natur",
+     "amount": 150,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Schwarze Bohnen",
+     "amount": 120,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 250,
+      "label": "Dose, 250 g abgetropft"
+     }
+    },
+    {
+     "name": "Reis",
+     "amount": 70,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 1000,
+      "label": "Pack 1 kg"
+     }
+    },
+    {
+     "name": "Mais",
+     "amount": 70,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 285,
+      "label": "Dose, 285 g abgetropft"
+     }
+    },
+    {
+     "name": "Avocado",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Tomate",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Limette",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.25,
+     "unit": "Stk",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Rauchpaprika",
+    "Kreuzkümmel",
+    "Chiliflocken",
+    "Tomatenmark",
+    "Olivenöl"
+   ],
+   "steps": [
+    "Reis kochen.",
+    "Tofu-Chorizo: Tofu zerbröseln und in Öl 10 Min. braun braten, dann Tomatenmark, Rauchpaprika, Kreuzkümmel und Chili kurz mitrösten.",
+    "Bohnen und Mais in der Pfanne erwärmen.",
+    "Guacamole: Avocado mit Limettensaft, Salz und fein gehackter Zwiebel zerdrücken.",
+    "Alles mit Tomate auf dem Reis anrichten."
+   ]
+  },
+  {
+   "key": "w1d2",
+   "name": "Linseneintopf mit Räuchertofu, Kartoffeln und Möhren",
+   "slot": "dinner",
+   "minutes": 45,
+   "protein": 45,
+   "kcal": 800,
+   "tags": [
+    "vegan",
+    "Asiatisch & mexikanisch"
+   ],
+   "ingredients": [
+    {
+     "name": "Tellerlinsen",
+     "amount": 80,
+     "unit": "g",
+     "category": "huelsen",
+     "pack": {
+      "size": 500,
+      "label": "Pack 500 g"
+     }
+    },
+    {
+     "name": "Räuchertofu",
+     "amount": 125,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Kartoffeln",
+     "amount": 200,
+     "unit": "g",
+     "category": "gemuese",
+     "pack": {
+      "size": 1000,
+      "label": "Netz 1 kg"
+     }
+    },
+    {
+     "name": "Möhre",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Gemüsebrühe",
+    "Tomatenmark",
+    "Majoran",
+    "Lorbeer",
+    "Essig",
+    "Senf"
+   ],
+   "steps": [
+    "Zwiebel, Möhren und Räuchertofu-Würfel in Öl anbraten, Tomatenmark mitrösten.",
+    "Linsen abspülen und mit Kartoffelwürfeln, Lorbeer und 400 ml Brühe pro Portion dazugeben.",
+    "30–35 Min. köcheln, bis die Linsen weich sind.",
+    "Mit Majoran, Senf, einem Schuss Essig, Salz und Pfeffer abschmecken. Ohne Sellerie – mehr Möhre und Zwiebel reichen."
+   ],
+   "tip": "Hält sich 3 Tage und schmeckt aufgewärmt besser."
+  },
+  {
+   "key": "w1d3",
+   "name": "Teriyaki-Tofu mit Edamame und Reis",
+   "slot": "dinner",
+   "minutes": 30,
+   "protein": 47,
+   "kcal": 850,
+   "tags": [
+    "vegan",
+    "Asiatisch & mexikanisch"
+   ],
+   "ingredients": [
+    {
+     "name": "Tofu natur",
+     "amount": 200,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Edamame, geschält (TK)",
+     "amount": 100,
+     "unit": "g",
+     "category": "tk",
+     "pack": {
+      "size": 500,
+      "label": "Beutel 500 g"
+     },
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Reis",
+     "amount": 80,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 1000,
+      "label": "Pack 1 kg"
+     }
+    },
+    {
+     "name": "Frühlingszwiebeln",
+     "amount": 2,
+     "unit": "Stange",
+     "category": "gemuese",
+     "pack": {
+      "size": 6,
+      "label": "Bund"
+     }
+    },
+    {
+     "name": "Ingwer",
+     "amount": 10,
+     "unit": "g",
+     "category": "gemuese"
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    }
+   ],
+   "basics": [
+    "Sojasoße",
+    "Ahornsirup",
+    "Reisessig",
+    "Speisestärke",
+    "Sesam"
+   ],
+   "steps": [
+    "Reis kochen, Tofu 10 Min. pressen und würfeln.",
+    "Tofu in wenig Öl rundum knusprig braten.",
+    "Sauce: 3 EL Sojasoße, 1 EL Ahornsirup, 1 TL Reisessig, Ingwer, Knoblauch, 1 TL Stärke und 50 ml Wasser verrühren.",
+    "Edamame 3 Min. kochen. Sauce zum Tofu geben und eindicken lassen.",
+    "Mit Edamame, Frühlingszwiebeln und Sesam auf Reis servieren."
+   ]
+  },
+  {
+   "key": "w1d4",
+   "name": "Cremige Pasta mit Erbsen, Seidentofu-Sauce und Räuchertofu",
+   "slot": "dinner",
+   "minutes": 25,
+   "protein": 43,
+   "kcal": 850,
+   "tags": [
+    "vegan",
+    "Asiatisch & mexikanisch"
+   ],
+   "ingredients": [
+    {
+     "name": "Vollkornspaghetti",
+     "amount": 100,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 500,
+      "label": "Pack 500 g"
+     }
+    },
+    {
+     "name": "Seidentofu",
+     "amount": 150,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 400,
+      "label": "Pack 400 g"
+     },
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Räuchertofu",
+     "amount": 100,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Erbsen (TK)",
+     "amount": 100,
+     "unit": "g",
+     "category": "tk",
+     "pack": {
+      "size": 450,
+      "label": "Beutel 450 g"
+     }
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    },
+    {
+     "name": "Zitrone",
+     "amount": 0.25,
+     "unit": "Stk",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Olivenöl",
+    "Muskat",
+    "Gemüsebrühe",
+    "Salz",
+    "Pfeffer"
+   ],
+   "steps": [
+    "Pasta kochen, Erbsen die letzten 3 Min. mitkochen.",
+    "Räuchertofu würfeln und knusprig braten.",
+    "Seidentofu mit Knoblauch, Zitronensaft, 1 EL Öl, Muskat und etwas Brühe glatt pürieren.",
+    "Pasta abgießen (etwas Nudelwasser aufheben), mit Sauce und Räuchertofu mischen, mit Nudelwasser cremig ziehen."
+   ]
+  },
+  {
+   "key": "w1d5",
+   "name": "Seitan-Pilz-Geschnetzeltes mit Kartoffelpüree",
+   "slot": "dinner",
+   "minutes": 40,
+   "protein": 50,
+   "kcal": 900,
+   "tags": [
+    "vegan",
+    "Asiatisch & mexikanisch"
+   ],
+   "ingredients": [
+    {
+     "name": "Seitan",
+     "amount": 150,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Weiße Bohnen",
+     "amount": 100,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 250,
+      "label": "Dose, 250 g abgetropft"
+     }
+    },
+    {
+     "name": "Sojamilch (mit Calcium)",
+     "amount": 150,
+     "unit": "ml",
+     "category": "kuehl",
+     "pack": {
+      "size": 1000,
+      "label": "Packung 1 l"
+     }
+    },
+    {
+     "name": "Kartoffeln",
+     "amount": 300,
+     "unit": "g",
+     "category": "gemuese",
+     "pack": {
+      "size": 1000,
+      "label": "Netz 1 kg"
+     }
+    },
+    {
+     "name": "Champignons",
+     "amount": 200,
+     "unit": "g",
+     "category": "gemuese",
+     "pack": {
+      "size": 250,
+      "label": "Schale 250 g"
+     }
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Soja-Cuisine",
+     "amount": 75,
+     "unit": "ml",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 ml"
+     }
+    }
+   ],
+   "basics": [
+    "Senf",
+    "Paprikapulver",
+    "Gemüsebrühe",
+    "Muskat",
+    "Rapsöl"
+   ],
+   "steps": [
+    "Kartoffeln schälen und 20 Min. kochen.",
+    "Seitan in Streifen schneiden, scharf anbraten und herausnehmen. Pilze und Zwiebel in derselben Pfanne braun braten.",
+    "Mit Soja-Cuisine und etwas Brühe ablöschen, Senf und Paprika dazu, Seitan zurück in die Sauce.",
+    "Kartoffeln mit abgespülten weißen Bohnen und warmer Sojamilch zu Püree stampfen, mit Muskat und Salz würzen."
+   ],
+   "tip": "Die weißen Bohnen im Püree schmeckt man nicht, sie gleichen aber das Lysin vom Seitan aus."
+  },
+  {
+   "key": "w1d6",
+   "name": "Tofu-Shakshuka mit Kichererbsen und Brot",
+   "slot": "dinner",
+   "minutes": 30,
+   "protein": 46,
+   "kcal": 850,
+   "tags": [
+    "vegan",
+    "Asiatisch & mexikanisch"
+   ],
+   "ingredients": [
+    {
+     "name": "Tofu natur",
+     "amount": 200,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Kichererbsen",
+     "amount": 120,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 250,
+      "label": "Dose, 250 g abgetropft"
+     }
+    },
+    {
+     "name": "Vollkornbrot",
+     "amount": 2,
+     "unit": "Scheibe",
+     "category": "brot",
+     "pack": {
+      "size": 10,
+      "label": "Laib 500 g ≈10 Scheiben"
+     }
+    },
+    {
+     "name": "Gehackte Tomaten",
+     "amount": 400,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 400,
+      "label": "Dose 400 g"
+     }
+    },
+    {
+     "name": "Paprika",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    }
+   ],
+   "basics": [
+    "Kreuzkümmel",
+    "Paprikapulver",
+    "Kurkuma",
+    "Kala Namak",
+    "Olivenöl"
+   ],
+   "steps": [
+    "Zwiebel, Paprika und Knoblauch in Öl 5 Min. anbraten, Kreuzkümmel und Paprikapulver mitrösten.",
+    "Tomaten und Kichererbsen dazu, 10 Min. einköcheln.",
+    "Tofu in dicke Scheiben schneiden, mit Kurkuma und Kala Namak würzen und in Mulden in die Sauce legen.",
+    "Zugedeckt 8 Min. ziehen lassen, mit Brot servieren."
+   ]
+  },
+  {
+   "key": "w2d0",
+   "name": "Erdnuss-Tempeh vom Blech mit Süßkartoffel, Spinat und Quinoa",
+   "slot": "dinner",
+   "minutes": 40,
+   "protein": 41,
+   "kcal": 950,
+   "tags": [
+    "vegan",
+    "Herbstgemüse"
+   ],
+   "ingredients": [
+    {
+     "name": "Tempeh",
+     "amount": 150,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     },
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Erdnussmus",
+     "amount": 20,
+     "unit": "g",
+     "category": "nuss",
+     "pack": {
+      "size": 250,
+      "label": "Glas 250 g"
+     }
+    },
+    {
+     "name": "Quinoa",
+     "amount": 60,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 500,
+      "label": "Pack 500 g"
+     }
+    },
+    {
+     "name": "Süßkartoffel",
+     "amount": 250,
+     "unit": "g",
+     "category": "gemuese"
+    },
+    {
+     "name": "Blattspinat (TK)",
+     "amount": 100,
+     "unit": "g",
+     "category": "tk",
+     "pack": {
+      "size": 450,
+      "label": "Pack 450 g"
+     }
+    },
+    {
+     "name": "Limette",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Sojasoße",
+    "Ahornsirup",
+    "Chiliflocken",
+    "Rapsöl"
+   ],
+   "steps": [
+    "Ofen auf 210 °C vorheizen. Süßkartoffel würfeln, mit Öl und Salz aufs Blech geben, 15 Min. backen.",
+    "Tempeh würfeln, mit 1 EL Sojasoße marinieren, aufs Blech geben und weitere 15 Min. backen.",
+    "Quinoa abspülen und 15 Min. kochen. TK-Spinat in einem Topf auftauen lassen.",
+    "Sauce: Erdnussmus, Limettensaft, 1 EL Sojasoße, 1 TL Ahornsirup, Chili und etwas Wasser glatt rühren.",
+    "Alles anrichten, Sauce darüber."
+   ]
+  },
+  {
+   "key": "w2d1",
+   "name": "Kichererbsen-Spinat-Curry mit Tofu-Paneer und Naan",
+   "slot": "dinner",
+   "minutes": 35,
+   "protein": 40,
+   "kcal": 900,
+   "tags": [
+    "vegan",
+    "Herbstgemüse"
+   ],
+   "ingredients": [
+    {
+     "name": "Tofu natur",
+     "amount": 150,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Kichererbsen",
+     "amount": 150,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 250,
+      "label": "Dose, 250 g abgetropft"
+     }
+    },
+    {
+     "name": "Naan",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "brot",
+     "pack": {
+      "size": 2,
+      "label": "Pack 2 Stk"
+     }
+    },
+    {
+     "name": "Blattspinat (TK)",
+     "amount": 150,
+     "unit": "g",
+     "category": "tk",
+     "pack": {
+      "size": 450,
+      "label": "Pack 450 g"
+     }
+    },
+    {
+     "name": "Gehackte Tomaten",
+     "amount": 200,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 400,
+      "label": "Dose 400 g"
+     }
+    },
+    {
+     "name": "Kokosmilch",
+     "amount": 50,
+     "unit": "ml",
+     "category": "dose",
+     "pack": {
+      "size": 400,
+      "label": "Dose 400 ml"
+     }
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    },
+    {
+     "name": "Ingwer",
+     "amount": 10,
+     "unit": "g",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Garam Masala",
+    "Kurkuma",
+    "Kreuzkümmel",
+    "Salz",
+    "Rapsöl"
+   ],
+   "steps": [
+    "Tofu-Paneer: Tofu würfeln, salzen und in Öl goldbraun braten. Herausnehmen.",
+    "Zwiebel, Knoblauch und Ingwer anschwitzen, Gewürze 1 Min. mitrösten.",
+    "Tomaten, Kichererbsen, Kokosmilch und TK-Spinat dazu, 15 Min. köcheln.",
+    "Tofu unterheben. Naan kurz aufbacken und dazu servieren."
+   ]
+  },
+  {
+   "key": "w2d2",
+   "name": "Dan-Dan-Nudeln mit Sojahack, Pak Choi und Edamame",
+   "slot": "dinner",
+   "minutes": 25,
+   "protein": 46,
+   "kcal": 850,
+   "tags": [
+    "vegan",
+    "Herbstgemüse"
+   ],
+   "ingredients": [
+    {
+     "name": "Weizennudeln (Mie/Udon)",
+     "amount": 100,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 250,
+      "label": "Pack 250 g"
+     },
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Sojagranulat (fein)",
+     "amount": 40,
+     "unit": "g",
+     "category": "huelsen",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Edamame, geschält (TK)",
+     "amount": 80,
+     "unit": "g",
+     "category": "tk",
+     "pack": {
+      "size": 500,
+      "label": "Beutel 500 g"
+     },
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Sesam",
+     "amount": 10,
+     "unit": "g",
+     "category": "nuss",
+     "pack": {
+      "size": 250,
+      "label": "Pack 250 g"
+     }
+    },
+    {
+     "name": "Pak Choi",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "gemuese",
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Frühlingszwiebeln",
+     "amount": 1,
+     "unit": "Stange",
+     "category": "gemuese",
+     "pack": {
+      "size": 6,
+      "label": "Bund"
+     }
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    },
+    {
+     "name": "Erdnussmus",
+     "amount": 10,
+     "unit": "g",
+     "category": "nuss",
+     "pack": {
+      "size": 250,
+      "label": "Glas 250 g"
+     }
+    }
+   ],
+   "basics": [
+    "Sojasoße",
+    "Sesamöl",
+    "Chiliöl",
+    "Reisessig",
+    "Gemüsebrühe"
+   ],
+   "steps": [
+    "Sojagranulat 10 Min. in heißer Brühe einweichen, ausdrücken und mit Knoblauch und 1 EL Sojasoße krümelig braun braten.",
+    "Sauce: Erdnussmus, 2 EL Sojasoße, 1 TL Reisessig, Sesamöl und Chili mit etwas heißem Wasser verrühren.",
+    "Nudeln kochen, Pak Choi und Edamame die letzten 2 Min. mitgaren.",
+    "Nudeln mit der Sauce mischen, Sojahack, Sesam und Frühlingszwiebeln obendrauf."
+   ]
+  },
+  {
+   "key": "w2d3",
+   "name": "Grünkohl-Eintopf mit weißen Bohnen, Kartoffeln und Räuchertofu",
+   "slot": "dinner",
+   "minutes": 45,
+   "protein": 41,
+   "kcal": 800,
+   "tags": [
+    "vegan",
+    "Herbstgemüse"
+   ],
+   "ingredients": [
+    {
+     "name": "Räuchertofu",
+     "amount": 125,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Weiße Bohnen",
+     "amount": 200,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 250,
+      "label": "Dose, 250 g abgetropft"
+     }
+    },
+    {
+     "name": "Kartoffeln",
+     "amount": 200,
+     "unit": "g",
+     "category": "gemuese",
+     "pack": {
+      "size": 1000,
+      "label": "Netz 1 kg"
+     }
+    },
+    {
+     "name": "Grünkohl (TK)",
+     "amount": 200,
+     "unit": "g",
+     "category": "tk",
+     "pack": {
+      "size": 450,
+      "label": "Pack 450 g"
+     }
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Möhre",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Gemüsebrühe",
+    "Senf",
+    "Muskat",
+    "Rapsöl"
+   ],
+   "steps": [
+    "Zwiebel, Möhre und Räuchertofu-Würfel in Öl anbraten.",
+    "Kartoffelwürfel, Grünkohl und 400 ml Brühe pro Portion dazu, 30 Min. köcheln.",
+    "Weiße Bohnen dazugeben, einen Teil zerdrücken, damit der Eintopf sämig wird.",
+    "Mit Senf, Muskat, Salz und Pfeffer abschmecken."
+   ]
+  },
+  {
+   "key": "w2d4",
+   "name": "Soja-Burger mit Ofenkartoffeln",
+   "slot": "dinner",
+   "minutes": 40,
+   "protein": 40,
+   "kcal": 950,
+   "tags": [
+    "vegan",
+    "Herbstgemüse"
+   ],
+   "ingredients": [
+    {
+     "name": "Sojagranulat (fein)",
+     "amount": 50,
+     "unit": "g",
+     "category": "huelsen",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Kichererbsenmehl",
+     "amount": 30,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 500,
+      "label": "Pack 500 g"
+     }
+    },
+    {
+     "name": "Vollkornbrötchen",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "brot"
+    },
+    {
+     "name": "Kartoffeln",
+     "amount": 300,
+     "unit": "g",
+     "category": "gemuese",
+     "pack": {
+      "size": 1000,
+      "label": "Netz 1 kg"
+     }
+    },
+    {
+     "name": "Tomate",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Gemüsebrühe",
+    "Sojasoße",
+    "Paprikapulver",
+    "Senf",
+    "Ketchup",
+    "Rapsöl"
+   ],
+   "steps": [
+    "Ofen auf 220 °C. Kartoffeln in Spalten schneiden, mit Öl, Salz und Paprika 30–35 Min. backen.",
+    "Sojagranulat 10 Min. in heißer Brühe mit Sojasoße einweichen, gut ausdrücken.",
+    "Mit Kichererbsenmehl, Paprika, Senf und 2–3 EL Wasser verkneten und zu einem Patty formen.",
+    "Patty in Öl je Seite 4 Min. braten. Mit Tomate, Zwiebel und Ketchup ins Brötchen."
+   ],
+   "tip": "Wenn du magst: Patties gleich für zwei Abende formen und roh einfrieren."
+  },
+  {
+   "key": "w2d5",
+   "name": "Pilz-Tofu-Stroganoff mit Reis und Soja-Cuisine",
+   "slot": "dinner",
+   "minutes": 35,
+   "protein": 41,
+   "kcal": 850,
+   "tags": [
+    "vegan",
+    "Herbstgemüse"
+   ],
+   "ingredients": [
+    {
+     "name": "Tofu natur",
+     "amount": 200,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Soja-Cuisine",
+     "amount": 100,
+     "unit": "ml",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 ml"
+     }
+    },
+    {
+     "name": "Reis",
+     "amount": 80,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 1000,
+      "label": "Pack 1 kg"
+     }
+    },
+    {
+     "name": "Hefeflocken",
+     "amount": 10,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 150,
+      "label": "Dose 150 g"
+     }
+    },
+    {
+     "name": "Champignons",
+     "amount": 250,
+     "unit": "g",
+     "category": "gemuese",
+     "pack": {
+      "size": 250,
+      "label": "Schale 250 g"
+     }
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    }
+   ],
+   "basics": [
+    "Paprikapulver",
+    "Senf",
+    "Gemüsebrühe",
+    "Rapsöl"
+   ],
+   "steps": [
+    "Reis kochen. Tofu in Streifen schneiden und knusprig braten.",
+    "Pilze, Zwiebel und Knoblauch braun anbraten, Paprika mitrösten.",
+    "Mit Soja-Cuisine und etwas Brühe ablöschen, Senf und Hefeflocken einrühren, 5 Min. köcheln.",
+    "Tofu unterheben und mit Reis servieren."
+   ]
+  },
+  {
+   "key": "w2d6",
+   "name": "Kürbis-Risotto mit weißen Bohnen und knusprigem Räuchertofu",
+   "slot": "dinner",
+   "minutes": 45,
+   "protein": 42,
+   "kcal": 900,
+   "tags": [
+    "vegan",
+    "Herbstgemüse"
+   ],
+   "ingredients": [
+    {
+     "name": "Risottoreis",
+     "amount": 90,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 500,
+      "label": "Pack 500 g"
+     }
+    },
+    {
+     "name": "Weiße Bohnen",
+     "amount": 150,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 250,
+      "label": "Dose, 250 g abgetropft"
+     }
+    },
+    {
+     "name": "Räuchertofu",
+     "amount": 125,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Hefeflocken",
+     "amount": 10,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 150,
+      "label": "Dose 150 g"
+     }
+    },
+    {
+     "name": "Hokkaido-Kürbis",
+     "amount": 250,
+     "unit": "g",
+     "category": "gemuese",
+     "pack": {
+      "size": 1000,
+      "label": "kleiner Kürbis ≈1 kg"
+     }
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    }
+   ],
+   "basics": [
+    "Gemüsebrühe",
+    "Olivenöl",
+    "Thymian"
+   ],
+   "steps": [
+    "Kürbis (Hokkaido mit Schale) würfeln. Zwiebel und Knoblauch in Öl anschwitzen, Reis und Kürbis kurz mitrösten.",
+    "Nach und nach ca. 350 ml heiße Brühe pro Portion angießen und 20 Min. unter Rühren köcheln.",
+    "Räuchertofu würfeln und separat knusprig braten.",
+    "Bohnen und Hefeflocken unter das Risotto rühren, mit Thymian abschmecken, Tofu obendrauf."
+   ]
+  },
+  {
+   "key": "w3d0",
+   "name": "Tofu-Bulgogi-Bowl mit Kimchi, Edamame und Reis",
+   "slot": "dinner",
+   "minutes": 30,
+   "protein": 47,
+   "kcal": 850,
+   "tags": [
+    "vegan",
+    "Lieblingsgerichte mit Protein-Upgrade"
+   ],
+   "ingredients": [
+    {
+     "name": "Tofu natur",
+     "amount": 200,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Edamame, geschält (TK)",
+     "amount": 100,
+     "unit": "g",
+     "category": "tk",
+     "pack": {
+      "size": 500,
+      "label": "Beutel 500 g"
+     },
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Reis",
+     "amount": 80,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 1000,
+      "label": "Pack 1 kg"
+     }
+    },
+    {
+     "name": "Kimchi (vegan)",
+     "amount": 60,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 300,
+      "label": "Glas 300 g"
+     },
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Frühlingszwiebeln",
+     "amount": 1,
+     "unit": "Stange",
+     "category": "gemuese",
+     "pack": {
+      "size": 6,
+      "label": "Bund"
+     }
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    },
+    {
+     "name": "Ingwer",
+     "amount": 5,
+     "unit": "g",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Sojasoße",
+    "Ahornsirup",
+    "Sesamöl",
+    "Gochujang",
+    "Sesam"
+   ],
+   "steps": [
+    "Reis kochen, Tofu pressen und in dünne Scheiben schneiden.",
+    "Marinade: 3 EL Sojasoße, 1 EL Ahornsirup, 1 TL Sesamöl, Knoblauch und Ingwer.",
+    "Tofu in Öl knusprig braten, Marinade dazugeben und einkochen lassen.",
+    "Edamame 3 Min. kochen. Mit Tofu und Kimchi auf Reis anrichten, Frühlingszwiebel und Sesam darüber."
+   ]
+  },
+  {
+   "key": "w3d1",
+   "name": "Shepherd’s Pie mit Belugalinsen, Sojahack und Süßkartoffelpüree",
+   "slot": "dinner",
+   "minutes": 55,
+   "protein": 38,
+   "kcal": 850,
+   "tags": [
+    "vegan",
+    "Lieblingsgerichte mit Protein-Upgrade"
+   ],
+   "ingredients": [
+    {
+     "name": "Belugalinsen",
+     "amount": 60,
+     "unit": "g",
+     "category": "huelsen",
+     "pack": {
+      "size": 500,
+      "label": "Pack 500 g"
+     }
+    },
+    {
+     "name": "Sojagranulat (fein)",
+     "amount": 40,
+     "unit": "g",
+     "category": "huelsen",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Süßkartoffel",
+     "amount": 300,
+     "unit": "g",
+     "category": "gemuese"
+    },
+    {
+     "name": "Möhre",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Erbsen (TK)",
+     "amount": 50,
+     "unit": "g",
+     "category": "tk",
+     "pack": {
+      "size": 450,
+      "label": "Beutel 450 g"
+     }
+    }
+   ],
+   "basics": [
+    "Gemüsebrühe",
+    "Tomatenmark",
+    "Thymian",
+    "Sojasoße",
+    "Olivenöl"
+   ],
+   "steps": [
+    "Linsen 25 Min. kochen. Süßkartoffeln würfeln, 15 Min. weich kochen und zu Püree stampfen.",
+    "Sojagranulat in heißer Brühe einweichen, ausdrücken und mit Zwiebel und Möhre braun anbraten, Tomatenmark mitrösten.",
+    "Linsen, Erbsen, Thymian, Sojasoße und etwas Brühe dazu, 5 Min. köcheln.",
+    "In eine Auflaufform füllen, Püree darauf verteilen und bei 200 °C 20 Min. backen."
+   ],
+   "tip": "Ergibt bequem mehrere Portionen und hält sich 3 Tage im Kühlschrank."
+  },
+  {
+   "key": "w3d2",
+   "name": "Pad Thai mit Tofu, Edamame und Erdnüssen",
+   "slot": "dinner",
+   "minutes": 30,
+   "protein": 48,
+   "kcal": 950,
+   "tags": [
+    "vegan",
+    "Lieblingsgerichte mit Protein-Upgrade"
+   ],
+   "ingredients": [
+    {
+     "name": "Reisnudeln, breit",
+     "amount": 100,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 250,
+      "label": "Pack 250 g"
+     },
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Tofu natur",
+     "amount": 200,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Edamame, geschält (TK)",
+     "amount": 60,
+     "unit": "g",
+     "category": "tk",
+     "pack": {
+      "size": 500,
+      "label": "Beutel 500 g"
+     },
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Erdnüsse, geröstet",
+     "amount": 20,
+     "unit": "g",
+     "category": "nuss",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Frühlingszwiebeln",
+     "amount": 2,
+     "unit": "Stange",
+     "category": "gemuese",
+     "pack": {
+      "size": 6,
+      "label": "Bund"
+     }
+    },
+    {
+     "name": "Limette",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Möhre",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    }
+   ],
+   "basics": [
+    "Sojasoße",
+    "Ahornsirup",
+    "Reisessig",
+    "Chiliflocken",
+    "Rapsöl"
+   ],
+   "steps": [
+    "Reisnudeln nach Packung einweichen.",
+    "Sauce: 3 EL Sojasoße, 1 EL Ahornsirup, 1 EL Reisessig, Limettensaft und Chili verrühren.",
+    "Tofu würfeln und knusprig braten, Knoblauch, Möhrenstreifen und Edamame 2 Min. mitbraten.",
+    "Nudeln und Sauce dazu, 2 Min. schwenken. Mit gehackten Erdnüssen und Frühlingszwiebeln servieren."
+   ]
+  },
+  {
+   "key": "w3d3",
+   "name": "Spitzkohl-Tempeh-Pfanne mit Kartoffeln und Senfsauce",
+   "slot": "dinner",
+   "minutes": 35,
+   "protein": 42,
+   "kcal": 850,
+   "tags": [
+    "vegan",
+    "Lieblingsgerichte mit Protein-Upgrade"
+   ],
+   "ingredients": [
+    {
+     "name": "Tempeh",
+     "amount": 150,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     },
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Kartoffeln",
+     "amount": 350,
+     "unit": "g",
+     "category": "gemuese",
+     "pack": {
+      "size": 1000,
+      "label": "Netz 1 kg"
+     }
+    },
+    {
+     "name": "Sojamilch (mit Calcium)",
+     "amount": 200,
+     "unit": "ml",
+     "category": "kuehl",
+     "pack": {
+      "size": 1000,
+      "label": "Packung 1 l"
+     }
+    },
+    {
+     "name": "Spitzkohl",
+     "amount": 250,
+     "unit": "g",
+     "category": "gemuese",
+     "pack": {
+      "size": 800,
+      "label": "Kopf ≈800 g"
+     }
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Senf",
+    "Mehl",
+    "Gemüsebrühe",
+    "Kümmel",
+    "Rapsöl"
+   ],
+   "steps": [
+    "Kartoffeln würfeln und 15 Min. kochen.",
+    "Tempeh würfeln, in Öl knusprig braten und herausnehmen.",
+    "Zwiebel und Spitzkohl in Streifen 5 Min. braten, mit Kümmel würzen.",
+    "Senfsauce: 1 EL Mehl in Öl anschwitzen, Sojamilch einrühren, mit 2 TL Senf, etwas Brühe und Salz abschmecken.",
+    "Kartoffeln, Kohl und Tempeh mischen, Sauce darüber."
+   ]
+  },
+  {
+   "key": "w3d4",
+   "name": "Rote-Linsen-Pasta mit Tomaten-Seidentofu-Sauce und Spinat",
+   "slot": "dinner",
+   "minutes": 20,
+   "protein": 44,
+   "kcal": 800,
+   "tags": [
+    "vegan",
+    "Lieblingsgerichte mit Protein-Upgrade"
+   ],
+   "ingredients": [
+    {
+     "name": "Rote-Linsen-Pasta",
+     "amount": 125,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 250,
+      "label": "Pack 250 g"
+     }
+    },
+    {
+     "name": "Seidentofu",
+     "amount": 150,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 400,
+      "label": "Pack 400 g"
+     },
+     "store": "Asia-Laden"
+    },
+    {
+     "name": "Hefeflocken",
+     "amount": 10,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 150,
+      "label": "Dose 150 g"
+     }
+    },
+    {
+     "name": "Gehackte Tomaten",
+     "amount": 200,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 400,
+      "label": "Dose 400 g"
+     }
+    },
+    {
+     "name": "Blattspinat (TK)",
+     "amount": 100,
+     "unit": "g",
+     "category": "tk",
+     "pack": {
+      "size": 450,
+      "label": "Pack 450 g"
+     }
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 2,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    }
+   ],
+   "basics": [
+    "Olivenöl",
+    "Oregano",
+    "Salz",
+    "Pfeffer"
+   ],
+   "steps": [
+    "Linsenpasta kochen, nicht zu lange, sie wird schnell weich.",
+    "Knoblauch in Öl anschwitzen, Tomaten und Spinat dazu, 5 Min. köcheln.",
+    "Seidentofu und Hefeflocken einrühren und glatt pürieren, mit Oregano würzen.",
+    "Pasta unterheben."
+   ],
+   "tip": "Das schnellste Gericht des Monats für stressige Tage."
+  },
+  {
+   "key": "w3d5",
+   "name": "Seitan-Schawarma-Teller mit Hummus und Bulgur",
+   "slot": "dinner",
+   "minutes": 30,
+   "protein": 50,
+   "kcal": 950,
+   "tags": [
+    "vegan",
+    "Lieblingsgerichte mit Protein-Upgrade"
+   ],
+   "ingredients": [
+    {
+     "name": "Seitan",
+     "amount": 150,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Hummus",
+     "amount": 80,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Becher 200 g"
+     }
+    },
+    {
+     "name": "Bulgur",
+     "amount": 70,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 500,
+      "label": "Pack 500 g"
+     }
+    },
+    {
+     "name": "Tomate",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Salatgurke",
+     "amount": 0.33,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.25,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Zitrone",
+     "amount": 0.25,
+     "unit": "Stk",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Kreuzkümmel",
+    "Paprikapulver",
+    "Zimt",
+    "Knoblauchpulver",
+    "Olivenöl"
+   ],
+   "steps": [
+    "Bulgur mit der doppelten Menge kochendem Salzwasser übergießen und 10 Min. quellen lassen.",
+    "Seitan in Streifen schneiden, mit Öl, Kreuzkümmel, Paprika, einer Prise Zimt und Knoblauchpulver würzen.",
+    "In der heißen Pfanne 6 Min. knusprig braten, mit Zitrone beträufeln.",
+    "Mit Hummus, Bulgur, Tomate, Gurke und Zwiebel anrichten."
+   ]
+  },
+  {
+   "key": "w3d6",
+   "name": "Gefüllte Paprika mit Sojahack, Kidneybohnen und Tofu-Feta",
+   "slot": "dinner",
+   "minutes": 50,
+   "protein": 43,
+   "kcal": 850,
+   "tags": [
+    "vegan",
+    "Lieblingsgerichte mit Protein-Upgrade"
+   ],
+   "ingredients": [
+    {
+     "name": "Sojagranulat (fein)",
+     "amount": 40,
+     "unit": "g",
+     "category": "huelsen",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Kidneybohnen",
+     "amount": 100,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 250,
+      "label": "Dose, 250 g abgetropft"
+     }
+    },
+    {
+     "name": "Reis",
+     "amount": 60,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 1000,
+      "label": "Pack 1 kg"
+     }
+    },
+    {
+     "name": "Tofu natur",
+     "amount": 80,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Paprika",
+     "amount": 2,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Gehackte Tomaten",
+     "amount": 200,
+     "unit": "g",
+     "category": "dose",
+     "pack": {
+      "size": 400,
+      "label": "Dose 400 g"
+     }
+    },
+    {
+     "name": "Zwiebel",
+     "amount": 0.5,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Knoblauch",
+     "amount": 1,
+     "unit": "Zehe",
+     "category": "gemuese",
+     "pack": {
+      "size": 10,
+      "label": "Knolle"
+     }
+    },
+    {
+     "name": "Zitrone",
+     "amount": 0.25,
+     "unit": "Stk",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [
+    "Oregano",
+    "Kreuzkümmel",
+    "Gemüsebrühe",
+    "Olivenöl"
+   ],
+   "steps": [
+    "Tofu-Feta: Tofu zerbröseln und mit Zitronensaft, Öl, Oregano und Salz marinieren.",
+    "Reis kochen. Sojagranulat in heißer Brühe einweichen, ausdrücken und mit Zwiebel und Knoblauch anbraten.",
+    "Reis, Granulat, Kidneybohnen und die Hälfte der Tomaten mischen, mit Kreuzkümmel würzen und in die ausgehöhlten Paprika füllen.",
+    "Restliche Tomaten in eine Form geben, Paprika darauf, bei 200 °C 30 Min. backen. Tofu-Feta die letzten 10 Min. obendrauf."
+   ]
+  },
+  {
+   "key": "B_oats",
+   "name": "Overnight Oats",
+   "slot": "breakfast",
+   "minutes": 5,
+   "protein": 33,
+   "kcal": 700,
+   "tags": [
+    "vegan"
+   ],
+   "ingredients": [
+    {
+     "name": "Haferflocken",
+     "amount": 80,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 500,
+      "label": "Pack 500 g"
+     }
+    },
+    {
+     "name": "Sojamilch (mit Calcium)",
+     "amount": 250,
+     "unit": "ml",
+     "category": "kuehl",
+     "pack": {
+      "size": 1000,
+      "label": "Packung 1 l"
+     }
+    },
+    {
+     "name": "Soja-Skyr / -Joghurt",
+     "amount": 150,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 500,
+      "label": "Becher 500 g"
+     }
+    },
+    {
+     "name": "Hanfsamen, geschält",
+     "amount": 20,
+     "unit": "g",
+     "category": "nuss",
+     "pack": {
+      "size": 250,
+      "label": "Pack 250 g"
+     }
+    },
+    {
+     "name": "Banane",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [],
+   "steps": [
+    "Am Vorabend Haferflocken, Sojamilch, Sojajoghurt und Hanfsamen in einem Glas verrühren und kalt stellen.",
+    "Morgens die Banane darüber schneiden."
+   ]
+  },
+  {
+   "key": "B_porr",
+   "name": "Protein-Porridge",
+   "slot": "breakfast",
+   "minutes": 5,
+   "protein": 35,
+   "kcal": 720,
+   "tags": [
+    "vegan"
+   ],
+   "ingredients": [
+    {
+     "name": "Haferflocken",
+     "amount": 80,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 500,
+      "label": "Pack 500 g"
+     }
+    },
+    {
+     "name": "Sojamilch (mit Calcium)",
+     "amount": 300,
+     "unit": "ml",
+     "category": "kuehl",
+     "pack": {
+      "size": 1000,
+      "label": "Packung 1 l"
+     }
+    },
+    {
+     "name": "Proteinpulver (Soja/Erbse)",
+     "amount": 20,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 500,
+      "label": "Dose 500 g"
+     }
+    },
+    {
+     "name": "Erdnussmus",
+     "amount": 15,
+     "unit": "g",
+     "category": "nuss",
+     "pack": {
+      "size": 250,
+      "label": "Glas 250 g"
+     }
+    },
+    {
+     "name": "Apfel",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "gemuese"
+    }
+   ],
+   "basics": [],
+   "steps": [
+    "Haferflocken in Sojamilch 5 Min. köcheln.",
+    "Vom Herd nehmen und Proteinpulver einrühren (nicht mehr kochen, sonst klumpt es).",
+    "Mit Erdnussmus und Apfelstücken toppen."
+   ]
+  },
+  {
+   "key": "B_scr",
+   "name": "Tofu-Scramble mit Spinat und Brot",
+   "slot": "breakfast",
+   "minutes": 5,
+   "protein": 32,
+   "kcal": 560,
+   "tags": [
+    "vegan"
+   ],
+   "ingredients": [
+    {
+     "name": "Tofu natur",
+     "amount": 200,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Blattspinat (TK)",
+     "amount": 50,
+     "unit": "g",
+     "category": "tk",
+     "pack": {
+      "size": 450,
+      "label": "Pack 450 g"
+     }
+    },
+    {
+     "name": "Vollkornbrot",
+     "amount": 2,
+     "unit": "Scheibe",
+     "category": "brot",
+     "pack": {
+      "size": 10,
+      "label": "Laib 500 g ≈10 Scheiben"
+     }
+    }
+   ],
+   "basics": [
+    "Kala Namak",
+    "Kurkuma",
+    "Rapsöl"
+   ],
+   "steps": [
+    "Tofu mit der Gabel zerbröseln und in Öl 5 Min. braten.",
+    "Eine Prise Kurkuma, TK-Spinat und Kala Namak (gibt den Ei-Geschmack) dazu, 2 Min. weiterbraten.",
+    "Mit 2 Scheiben Vollkornbrot essen."
+   ]
+  },
+  {
+   "key": "B_brot",
+   "name": "Herzhaftes Brot mit Räuchertofu",
+   "slot": "breakfast",
+   "minutes": 5,
+   "protein": 35,
+   "kcal": 650,
+   "tags": [
+    "vegan"
+   ],
+   "ingredients": [
+    {
+     "name": "Vollkornbrot",
+     "amount": 3,
+     "unit": "Scheibe",
+     "category": "brot",
+     "pack": {
+      "size": 10,
+      "label": "Laib 500 g ≈10 Scheiben"
+     }
+    },
+    {
+     "name": "Räuchertofu",
+     "amount": 100,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Hummus",
+     "amount": 50,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Becher 200 g"
+     }
+    },
+    {
+     "name": "Tomate",
+     "amount": 1,
+     "unit": "Stk",
+     "category": "gemuese"
+    },
+    {
+     "name": "Sojamilch (mit Calcium)",
+     "amount": 200,
+     "unit": "ml",
+     "category": "kuehl",
+     "pack": {
+      "size": 1000,
+      "label": "Packung 1 l"
+     }
+    }
+   ],
+   "basics": [],
+   "steps": [
+    "Brot mit Hummus bestreichen, mit Räuchertofu-Scheiben und Tomate belegen.",
+    "Dazu ein Glas Sojamilch."
+   ]
+  },
+  {
+   "key": "L_brot",
+   "name": "Räuchertofu-Brote mit Hummus",
+   "slot": "lunch",
+   "minutes": 5,
+   "protein": 27,
+   "kcal": 550,
+   "tags": [
+    "vegan"
+   ],
+   "ingredients": [
+    {
+     "name": "Vollkornbrot",
+     "amount": 3,
+     "unit": "Scheibe",
+     "category": "brot",
+     "pack": {
+      "size": 10,
+      "label": "Laib 500 g ≈10 Scheiben"
+     }
+    },
+    {
+     "name": "Räuchertofu",
+     "amount": 100,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Hummus",
+     "amount": 50,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 200,
+      "label": "Becher 200 g"
+     }
+    }
+   ],
+   "basics": [],
+   "steps": [
+    "3 Scheiben Vollkornbrot mit Hummus und Räuchertofu belegen. Lässt sich gut mitnehmen."
+   ]
+  },
+  {
+   "key": "S_shake",
+   "name": "Protein-Shake und Nüsse",
+   "slot": "snack",
+   "minutes": 5,
+   "protein": 37,
+   "kcal": 450,
+   "tags": [
+    "vegan"
+   ],
+   "ingredients": [
+    {
+     "name": "Proteinpulver (Soja/Erbse)",
+     "amount": 30,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 500,
+      "label": "Dose 500 g"
+     }
+    },
+    {
+     "name": "Sojamilch (mit Calcium)",
+     "amount": 300,
+     "unit": "ml",
+     "category": "kuehl",
+     "pack": {
+      "size": 1000,
+      "label": "Packung 1 l"
+     }
+    },
+    {
+     "name": "Nüsse (Mischung)",
+     "amount": 30,
+     "unit": "g",
+     "category": "nuss",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    }
+   ],
+   "basics": [],
+   "steps": [
+    "30 g Proteinpulver mit 300 ml Sojamilch shaken, eine Handvoll Nüsse dazu."
+   ]
+  },
+  {
+   "key": "S_eda",
+   "name": "Edamame mit Salz und Chili",
+   "slot": "snack",
+   "minutes": 5,
+   "protein": 22,
+   "kcal": 250,
+   "tags": [
+    "vegan"
+   ],
+   "ingredients": [
+    {
+     "name": "Edamame, geschält (TK)",
+     "amount": 200,
+     "unit": "g",
+     "category": "tk",
+     "pack": {
+      "size": 500,
+      "label": "Beutel 500 g"
+     },
+     "store": "Asia-Laden"
+    }
+   ],
+   "basics": [
+    "Salz",
+    "Chiliflocken"
+   ],
+   "steps": [
+    "TK-Edamame 4 Min. kochen, abgießen, mit Salz und Chili bestreuen."
+   ]
+  },
+  {
+   "key": "S_skyr",
+   "name": "Soja-Skyr mit Kürbiskernen und Beeren",
+   "slot": "snack",
+   "minutes": 5,
+   "protein": 25,
+   "kcal": 400,
+   "tags": [
+    "vegan"
+   ],
+   "ingredients": [
+    {
+     "name": "Soja-Skyr / -Joghurt",
+     "amount": 250,
+     "unit": "g",
+     "category": "kuehl",
+     "pack": {
+      "size": 500,
+      "label": "Becher 500 g"
+     }
+    },
+    {
+     "name": "Kürbiskerne",
+     "amount": 30,
+     "unit": "g",
+     "category": "nuss",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    },
+    {
+     "name": "Beerenmischung (TK)",
+     "amount": 80,
+     "unit": "g",
+     "category": "tk",
+     "pack": {
+      "size": 300,
+      "label": "Beutel 300 g"
+     }
+    }
+   ],
+   "basics": [],
+   "steps": [
+    "TK-Beeren am Morgen in den Kühlschrank legen, abends mit Skyr und Kürbiskernen mischen."
+   ]
+  },
+  {
+   "key": "S_rw",
+   "name": "Reiswaffeln mit Erdnussmus und kleinem Shake",
+   "slot": "snack",
+   "minutes": 5,
+   "protein": 22,
+   "kcal": 330,
+   "tags": [
+    "vegan"
+   ],
+   "ingredients": [
+    {
+     "name": "Reiswaffeln",
+     "amount": 2,
+     "unit": "Stk",
+     "category": "brot",
+     "pack": {
+      "size": 12,
+      "label": "Pack ≈12 Stk"
+     }
+    },
+    {
+     "name": "Erdnussmus",
+     "amount": 20,
+     "unit": "g",
+     "category": "nuss",
+     "pack": {
+      "size": 250,
+      "label": "Glas 250 g"
+     }
+    },
+    {
+     "name": "Proteinpulver (Soja/Erbse)",
+     "amount": 20,
+     "unit": "g",
+     "category": "trocken",
+     "pack": {
+      "size": 500,
+      "label": "Dose 500 g"
+     }
+    }
+   ],
+   "basics": [],
+   "steps": [
+    "Reiswaffeln mit Erdnussmus bestreichen.",
+    "20 g Proteinpulver in 250 ml Wasser shaken."
+   ]
+  },
+  {
+   "key": "X_nuts",
+   "name": "Handvoll Nüsse (30 g)",
+   "slot": "snack",
+   "minutes": 1,
+   "protein": 6,
+   "kcal": 190,
+   "tags": [
+    "vegan",
+    "Extra"
+   ],
+   "ingredients": [
+    {
+     "name": "Nüsse (Mischung)",
+     "amount": 30,
+     "unit": "g",
+     "category": "nuss",
+     "pack": {
+      "size": 200,
+      "label": "Pack 200 g"
+     }
+    }
+   ],
+   "basics": [],
+   "steps": []
+  },
+  {
+   "key": "X_pb",
+   "name": "1 EL Erdnussmus ins Frühstück",
+   "slot": "snack",
+   "minutes": 1,
+   "protein": 4,
+   "kcal": 95,
+   "tags": [
+    "vegan",
+    "Extra"
+   ],
+   "ingredients": [
+    {
+     "name": "Erdnussmus",
+     "amount": 15,
+     "unit": "g",
+     "category": "nuss",
+     "pack": {
+      "size": 250,
+      "label": "Glas 250 g"
+     }
+    }
+   ],
+   "basics": [],
+   "steps": []
+  },
+  {
+   "key": "X_bread",
+   "name": "2 Scheiben Brot zum warmen Gericht",
+   "slot": "snack",
+   "minutes": 1,
+   "protein": 8,
+   "kcal": 200,
+   "tags": [
+    "vegan",
+    "Extra"
+   ],
+   "ingredients": [
+    {
+     "name": "Vollkornbrot",
+     "amount": 2,
+     "unit": "Scheibe",
+     "category": "brot",
+     "pack": {
+      "size": 10,
+      "label": "Laib 500 g ≈10 Scheiben"
+     }
+    }
+   ],
+   "basics": [],
+   "steps": []
+  },
+  {
+   "key": "X_milk",
+   "name": "Glas Sojamilch (250 ml)",
+   "slot": "snack",
+   "minutes": 1,
+   "protein": 8,
+   "kcal": 85,
+   "tags": [
+    "vegan",
+    "Extra"
+   ],
+   "ingredients": [
+    {
+     "name": "Sojamilch (mit Calcium)",
+     "amount": 250,
+     "unit": "ml",
+     "category": "kuehl",
+     "pack": {
+      "size": 1000,
+      "label": "Packung 1 l"
+     }
+    }
+   ],
+   "basics": [],
+   "steps": []
+  }
+ ],
+ "template": {
+  "name": "Veganer High-Protein-Monatsplan",
+  "dinners": [
+   "w0d0",
+   "w0d1",
+   "w0d2",
+   "w0d3",
+   "w0d4",
+   "w0d5",
+   "w0d6",
+   "w1d0",
+   "w1d1",
+   "w1d2",
+   "w1d3",
+   "w1d4",
+   "w1d5",
+   "w1d6",
+   "w2d0",
+   "w2d1",
+   "w2d2",
+   "w2d3",
+   "w2d4",
+   "w2d5",
+   "w2d6",
+   "w3d0",
+   "w3d1",
+   "w3d2",
+   "w3d3",
+   "w3d4",
+   "w3d5",
+   "w3d6"
+  ],
+  "breakfast": [
+   "B_oats",
+   "B_oats",
+   "B_porr",
+   "B_oats",
+   "B_oats",
+   "B_scr",
+   "B_porr"
+  ],
+  "snack": [
+   "S_shake",
+   "S_eda",
+   "S_shake",
+   "S_skyr",
+   "S_shake",
+   "S_rw",
+   "S_shake"
+  ]
+ },
+ "basicInfo": {
+  "Ahornsirup": {
+   "info": "Geht auch Zucker."
+  },
+  "Rote Currypaste": {
+   "info": "Glas im Asia-Regal, auf „vegan“ achten (oft mit Garnele)."
+  },
+  "Chili-Bohnenpaste (Doubanjiang)": {
+   "info": "Scharfe, fermentierte Bohnenpaste, das Herz von Mapo Tofu. Hält offen monatelang im Kühlschrank.",
+   "store": "Asia-Laden"
+  },
+  "Gochujang": {
+   "info": "Koreanische Chilipaste, optional. Süß-scharf, hält offen lange.",
+   "store": "Asia-Laden"
+  },
+  "Sesamöl": {
+   "info": "Geröstetes Sesamöl zum Würzen, nicht zum Braten.",
+   "store": "Asia-Laden"
+  },
+  "Chiliöl": {
+   "info": "Chiliöl mit Chili-Stückchen. Ersatz: Chiliflocken in heißem Öl.",
+   "store": "Asia-Laden"
+  },
+  "Reisessig": {
+   "store": "Asia-Laden"
+  },
+  "Garam Masala": {
+   "info": "Indische Gewürzmischung."
+  },
+  "Kala Namak": {
+   "info": "Schwefelsalz, schmeckt nach Ei. Für Tofu-Scramble und Shakshuka.",
+   "store": "Asia-Laden"
+  }
+ }
+}

@@ -1,0 +1,130 @@
+// SQLite über das in Node eingebaute node:sqlite – keine nativen Abhängigkeiten.
+import { DatabaseSync } from 'node:sqlite';
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+
+const SCHEMA = `
+CREATE TABLE IF NOT EXISTS households (
+  id INTEGER PRIMARY KEY, name TEXT NOT NULL, invite TEXT NOT NULL UNIQUE,
+  settings TEXT NOT NULL DEFAULT '{}', created INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE COLLATE NOCASE, display TEXT NOT NULL,
+  pass TEXT NOT NULL, settings TEXT NOT NULL DEFAULT '{}',
+  household_id INTEGER NOT NULL REFERENCES households(id), created INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS sessions (
+  token TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, created INTEGER NOT NULL
+);
+-- owner_id NULL = mitgeliefertes Gericht; key = stabile Kennung der mitgelieferten Gerichte
+CREATE TABLE IF NOT EXISTS dishes (
+  id INTEGER PRIMARY KEY, owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL, key TEXT UNIQUE,
+  name TEXT NOT NULL, slot TEXT NOT NULL, data TEXT NOT NULL, deleted INTEGER NOT NULL DEFAULT 0, created INTEGER NOT NULL
+);
+-- Eine geplante Mahlzeit eines Haushalts. leftover_of: Rest einer früheren Mahlzeit (nichts einzukaufen).
+-- custom: freier Eintrag ohne Gericht, JSON {name, protein, kcal}.
+CREATE TABLE IF NOT EXISTS meals (
+  id INTEGER PRIMARY KEY, household_id INTEGER NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+  date TEXT NOT NULL, slot TEXT NOT NULL, dish_id INTEGER REFERENCES dishes(id), custom TEXT,
+  cook_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  leftover_of INTEGER REFERENCES meals(id) ON DELETE CASCADE,
+  created_by INTEGER, created INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS meals_hh_date ON meals(household_id, date);
+CREATE TABLE IF NOT EXISTS meal_eaters (
+  meal_id INTEGER NOT NULL REFERENCES meals(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  portions REAL NOT NULL DEFAULT 1, eaten INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (meal_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS eaters_user ON meal_eaters(user_id);
+-- Ein Einkauf deckt die Tage from_date..to_date ab.
+CREATE TABLE IF NOT EXISTS trips (
+  id INTEGER PRIMARY KEY, household_id INTEGER NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+  from_date TEXT NOT NULL, to_date TEXT NOT NULL, shopper_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  done_at INTEGER, UNIQUE (household_id, from_date)
+);
+CREATE TABLE IF NOT EXISTS trip_checks (
+  trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE, key TEXT NOT NULL, PRIMARY KEY (trip_id, key)
+);
+CREATE TABLE IF NOT EXISTS trip_items (
+  id INTEGER PRIMARY KEY, trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+  text TEXT NOT NULL, by_id INTEGER, got INTEGER NOT NULL DEFAULT 0
+);
+-- kind: 'expense' (Ausgabe, auf shares verteilt) oder 'transfer' (Ausgleichszahlung payer -> Empfänger in shares)
+CREATE TABLE IF NOT EXISTS expenses (
+  id INTEGER PRIMARY KEY, household_id INTEGER NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+  payer_id INTEGER NOT NULL REFERENCES users(id), cents INTEGER NOT NULL, note TEXT NOT NULL DEFAULT '',
+  date TEXT NOT NULL, kind TEXT NOT NULL DEFAULT 'expense', split TEXT NOT NULL DEFAULT 'equal',
+  trip_id INTEGER REFERENCES trips(id) ON DELETE SET NULL, created INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS expense_shares (
+  expense_id INTEGER NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id), cents INTEGER NOT NULL, PRIMARY KEY (expense_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS follows (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  target_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, PRIMARY KEY (user_id, target_id)
+);
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  from_id INTEGER REFERENCES users(id) ON DELETE SET NULL, kind TEXT NOT NULL, text TEXT NOT NULL,
+  read INTEGER NOT NULL DEFAULT 0, created INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS notif_user ON notifications(user_id, created);
+CREATE TABLE IF NOT EXISTS push_subs (
+  endpoint TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  p256dh TEXT NOT NULL, auth TEXT NOT NULL, created INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL);
+`;
+
+export function openDb(file) {
+  if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
+  const db = new DatabaseSync(file);
+  db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 3000;');
+  db.exec(SCHEMA);
+
+  const cache = new Map();
+  const stmt = sql => { let s = cache.get(sql); if (!s) cache.set(sql, (s = db.prepare(sql))); return s; };
+  const api = {
+    raw: db,
+    get: (sql, ...p) => stmt(sql).get(...p),
+    all: (sql, ...p) => stmt(sql).all(...p),
+    run: (sql, ...p) => stmt(sql).run(...p),
+    insert: (sql, ...p) => Number(stmt(sql).run(...p).lastInsertRowid),
+    tx(fn) {
+      db.exec('BEGIN IMMEDIATE');
+      try { const r = fn(); db.exec('COMMIT'); return r; } catch (e) { db.exec('ROLLBACK'); throw e; }
+    },
+    kv: {
+      get: k => { const r = api.get('SELECT v FROM kv WHERE k = ?', k); return r ? JSON.parse(r.v) : undefined; },
+      set: (k, v) => api.run('INSERT INTO kv (k, v) VALUES (?, ?) ON CONFLICT (k) DO UPDATE SET v = excluded.v', k, JSON.stringify(v))
+    },
+    close: () => db.close()
+  };
+  seed(api);
+  return api;
+}
+
+// Mitgelieferte Gerichte einspielen bzw. aktualisieren (erkennbar am key, gehören niemandem).
+function seed(db) {
+  const seedData = JSON.parse(fs.readFileSync(path.join(here, 'seed.json'), 'utf8'));
+  const hash = crypto.createHash('sha1').update(JSON.stringify(seedData.dishes)).digest('hex');
+  if (db.kv.get('seedHash') === hash) return;
+  db.tx(() => {
+    for (const d of seedData.dishes) {
+      const { key, ...data } = d;
+      db.run(`INSERT INTO dishes (owner_id, key, name, slot, data, created) VALUES (NULL, ?, ?, ?, ?, ?)
+              ON CONFLICT (key) DO UPDATE SET name = excluded.name, slot = excluded.slot, data = excluded.data`,
+        key, d.name, d.slot, JSON.stringify(data), Date.now());
+    }
+    db.kv.set('seedHash', hash);
+    db.kv.set('template', seedData.template);
+    db.kv.set('basicInfo', seedData.basicInfo);
+  });
+}

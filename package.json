@@ -1,0 +1,14 @@
+{
+  "name": "kochrunde",
+  "version": "0.1.0",
+  "description": "Essensplan, Einkauf und Kasse für Haushalte – mit Fortschritt und Anstupsen",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test test/",
+    "seed": "node tools/build-seed.mjs"
+  }
+}
