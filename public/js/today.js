@@ -2,6 +2,7 @@
 import { S, get, post, patch, del, esc, ico, nf, pills, head, chip, avatar, settingsBtn, members, memberName, solo, toast, fmtCount, fmtNice, portions, shortName,
   todayISO, addDays, wdOf, WDL, WD, dateLabel, openSheet, closeSheet, drawSheet } from './core.js';
 import { SLOTS, SLOT_LABEL } from '/shared/dish.js';
+import { woki } from './woki.js';
 
 let meals = [], loaded = '';
 const open = {}, seen = {};
@@ -54,13 +55,15 @@ function mealCard(m) {
     body + '<div class="actions">' + actions + '</div></article>';
 }
 
+const wokiCard = (title, text) => '<div class="woki-card">' + woki('sleepy') + '<div><h3>' + title + '</h3><p class="muted">' + text + '</p></div></div>';
+
 function render() {
   const date = S.date, isToday = date === todayISO(), g = S.me.user.settings;
   const day = loaded === date ? meals.filter(m => m.date === date) : [];
   const my = day.filter(mine), other = day.filter(m => !mine(m));
   let planP = 0, planK = 0, eatP = 0, eatK = 0;
   for (const m of my) { const e = mine(m), p = m.protein * e.portions, k = m.kcal * e.portions; planP += p; planK += k; if (e.eaten) { eatP += p; eatK += k; } }
-  let h = head(isToday ? 'Heute' : addDays(todayISO(), 1) === date ? 'Morgen' : addDays(todayISO(), -1) === date ? 'Gestern' : 'Tag', WDL[wdOf(date)] + ',<br>' + dateLabel(date),
+  let h = '<div class="brand">' + woki('happy') + '<span>SlopWok</span></div>' + head(isToday ? 'Heute' : addDays(todayISO(), 1) === date ? 'Morgen' : addDays(todayISO(), -1) === date ? 'Gestern' : 'Tag', WDL[wdOf(date)] + ',<br>' + dateLabel(date),
     '<button class="iconbtn" data-act="day" data-d="-1" aria-label="Vorheriger Tag">' + ico.prev + '</button>' +
     chip('Heute', isToday, 'data-act="day" data-d="0"') +
     '<button class="iconbtn" data-act="day" data-d="1" aria-label="Nächster Tag">' + ico.next + '</button>' + settingsBtn());
@@ -68,12 +71,19 @@ function render() {
     meter('prot', 'Protein', 'g', Math.round(planP), Math.round(eatP), g.pGoal, 'Ziel ' + g.pGoal + ' g · geplant ' + nf(planP) + ' g') +
     meter('kcal', 'Kalorien', 'kcal', Math.round(planK), Math.round(eatK), g.kGoal, 'Ziel ' + nf(g.kGoal) + ' · geplant ' + nf(planK)) + '</section>';
 
+  // Woki meldet sich: Anstupser (öffnet „Leute" und gilt dann als gelesen), alles gegessen, Feierabend ohne Plan
+  const planned = my.filter(m => m.slot !== 'extra');
+  const late = isToday && loaded === date && !day.length && new Date().getHours() >= 20;
+  if (isToday && S.me.nudge) h += '<button class="woki-card nudge" data-act="nav" data-v="people">' + woki('nudge') + '<div><h3>Angestupst!</h3><p>' + esc(S.me.nudge.text) + '</p></div></button>';
+  if (isToday && loaded === date && planned.length && planned.every(m => mine(m).eaten)) h += wokiCard('Satt und fertig', 'Alles gegessen, was für heute geplant war. Woki macht Feierabend.');
+  else if (late) h += wokiCard('Feierabend', 'Für heute ist nichts mehr geplant. Woki ruht sich aus, morgen geht es weiter.');
+
   const hints = [];
   for (const m of my) {
     if (m.cookId === myId() && !m.leftoverOf && !solo()) hints.push(['pot', '<b>Du kochst:</b> ' + esc(shortName(m.name)) + ', ' + portions(m.cook) + ' insgesamt.']);
     else if (m.leftoverPortions && solo()) hints.push(['pot', '<b>Mehr kochen:</b> ' + portions(m.cook) + ' ' + esc(shortName(m.name)) + ', der Rest ist dein Mittag morgen.']);
   }
-  if (loaded === date && !day.length) hints.push(['info', g.mode === 'auto' ? 'Vorschläge gibt es ab heute für bis zu vier Wochen im Voraus. Diesen Tag kannst du selbst füllen.' : 'Für diesen Tag ist noch nichts geplant. Trag unten Mahlzeiten ein, nimm unter <b>Plan</b> den fertigen Monatsplan oder schalte in den Einstellungen <b>Vorschläge</b> ein.']);
+  if (loaded === date && !day.length && !late) hints.push(['info', g.mode === 'auto' ? 'Vorschläge gibt es ab heute für bis zu vier Wochen im Voraus. Diesen Tag kannst du selbst füllen.' : 'Für diesen Tag ist noch nichts geplant. Trag unten Mahlzeiten ein, nimm unter <b>Plan</b> den fertigen Monatsplan oder schalte in den Einstellungen <b>Vorschläge</b> ein.']);
   else if (loaded === date && my.length && planP < g.pGoal * 0.9) hints.push(['info', 'Geplant sind ' + nf(planP) + ' g Protein, zu deinem Ziel fehlen noch <b>' + nf(g.pGoal - planP) + ' g</b>. Eine größere Portion oder ein Extra schließt die Lücke.', 'amber']);
   if (hints.length) h += '<section class="stack">' + hints.map(([ic, t, cl]) => '<div class="hint' + (cl ? ' ' + cl : '') + '">' + ico[ic] + '<span>' + t + '</span></div>').join('') + '</section>';
 

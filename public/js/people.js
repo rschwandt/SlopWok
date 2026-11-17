@@ -1,5 +1,6 @@
 // Ansicht „Leute": Fortschritt im Haushalt und von Leuten, denen man folgt, Anstupsen, Nachrichten, Haushalt verwalten.
 import { S, get, post, patch, del, esc, ico, nf, head, avatar, settingsBtn, toast, copyText, ago, loadDishes, WD, wdOf, dateLabel, openSheet, closeSheet, drawSheet } from './core.js';
+import { woki } from './woki.js';
 
 let data = null, results = null, query = '';
 
@@ -32,7 +33,7 @@ function render() {
   if (!data) return h;
   if (data.notifications.length) {
     h += '<div class="card"><h2>Neuigkeiten</h2><div>' + data.notifications.slice(0, 6).map(n =>
-      '<div class="notif' + (n.read ? '' : ' unread') + '"><span>' + esc(n.text) + '</span><time>' + ago(n.created) + '</time></div>').join('') + '</div></div>';
+      '<div class="notif' + (n.read ? '' : ' unread') + '">' + (n.kind === 'nudge' ? woki('nudge') : '') + '<span>' + esc(n.text) + '</span><time>' + ago(n.created) + '</time></div>').join('') + '</div></div>';
   }
   h += '<div class="split"><h2>' + esc(hh.name) + '</h2></div>' + data.household.map(personCard).join('');
   if (hh.members.length < 2) h += '<div class="hint">' + ico.info + '<span>Du bist noch allein. Schick den Einladungslink unten an deine Mitbewohner – dann plant, kocht und kauft ihr gemeinsam.</span></div>';

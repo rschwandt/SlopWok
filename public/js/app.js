@@ -1,5 +1,6 @@
 // Start, Anmeldung, Navigation und zentrale Ereignisbehandlung.
 import { S, get, post, esc, ico, toast, fail, todayISO, loadDishes, setUnauthorized, currentSheet, closeSheet, drawSheet, openSheet } from './core.js';
+import { woki } from './woki.js';
 import today from './today.js';
 import plan from './plan.js';
 import shop from './shop.js';
@@ -16,7 +17,7 @@ let authMode = 'login', authError = '', pendingJoin = '';
 // ---------- Anmeldung ----------
 function renderAuth() {
   const reg = authMode === 'register';
-  return '<div class="auth"><img class="logo" src="/icons/icon.svg" alt="" width="64" height="64">' +
+  return '<div class="auth">' + woki('happy', { label: 'Woki, der SlopWok-Wok' }) +
     '<div><h1>SlopWok</h1><p class="muted">Gemeinsam Essen planen, einkaufen und dranbleiben.</p></div>' +
     '<div class="seg-tabs"><button data-act="authMode" data-v="login" aria-pressed="' + !reg + '">Anmelden</button><button data-act="authMode" data-v="register" aria-pressed="' + reg + '">Neu hier</button></div>' +
     '<form class="card" data-form="auth" autocomplete="on">' +

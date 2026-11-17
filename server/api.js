@@ -102,6 +102,8 @@ export function createApi(db, cfg = {}) {
       user: { ...publicUser(user), settings: L.userSettings(user) },
       household: { id: hh.id, name: hh.name, invite: hh.invite, settings: L.hhSettings(hh), members: membersOf(db, hh.id).map(m => ({ ...publicUser(m), portion: L.userSettings(m).portion })) },
       unread: db.get('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read = 0', user.id).n,
+      // jüngster ungelesener Anstupser der letzten 24 Stunden, für Woki auf „Heute"
+      nudge: db.get("SELECT text, created FROM notifications WHERE user_id = ? AND kind = 'nudge' AND read = 0 AND created > ? ORDER BY id DESC LIMIT 1", user.id, Date.now() - 864e5) || null,
       vapidKey: vapid.publicKey,
       template: db.kv.get('template')?.name || null
     };

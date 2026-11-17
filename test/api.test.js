@@ -188,9 +188,13 @@ test('Privatsphäre, Folgen und Anstupsen mit Push', async () => {
   assert.equal((await ben.post('/api/nudge', { userId: A.user.id })).status, 429);
   const p = await anna.get('/api/people');
   assert.equal(p.notifications[0].kind, 'nudge');
-  assert.ok((await anna.get('/api/me')).unread >= 1);
+  const meN = await anna.get('/api/me');
+  assert.ok(meN.unread >= 1);
+  assert.match(meN.nudge.text, /^Ben /);
   await anna.post('/api/notifications/read');
-  assert.equal((await anna.get('/api/me')).unread, 0);
+  const meR = await anna.get('/api/me');
+  assert.equal(meR.unread, 0);
+  assert.equal(meR.nudge, null);
 
   // Wieder privat: Cleo sieht nichts mehr, Ben (gleicher Haushalt) auch nicht
   await anna.patch('/api/me', { settings: { share: 'none' } });

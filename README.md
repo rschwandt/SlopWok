@@ -64,7 +64,9 @@ server/db.js       SQLite-Schema, spielt server/seed.json ein
 server/push.js     Web Push (VAPID + aes128gcm) ohne Fremdbibliothek
 shared/dish.js     Gerichteformat: Prüfung, Import, LLM-Prompt (läuft in Browser und Server)
 public/            die Web-App (ES-Module, kein Framework)
+public/js/woki.js  Woki, das Maskottchen (SVG, drei Stimmungen); Quelle für die App-Icons
 tools/build-seed.mjs  erzeugt server/seed.json aus der ursprünglichen Einzelnutzer-App
+tools/build-icons.mjs erzeugt public/icons/ aus woki.js (braucht rsvg-convert)
 ```
 
 ## Was bewusst (noch) fehlt
@@ -75,4 +77,13 @@ tools/build-seed.mjs  erzeugt server/seed.json aus der ursprünglichen Einzelnut
 - Kein „Passwort vergessen" (es gibt keine E-Mail-Adressen). Zurücksetzen geht nur direkt in der Datenbank.
 - Ein Konto gehört immer zu genau einem Haushalt.
 
-Schriften: Bricolage Grotesque und Figtree (SIL Open Font License), lokal ausgeliefert.
+## Aussehen
+
+Woki's Teahouse: Pfirsichblüten-Papier, Seladon-Glasur, Porzellanblau und ein Zinnober-Siegel. Woki, der Wok mit
+Gesicht, ist Logo und App-Icon und meldet sich in drei Stimmungen: fröhlich (Kopf, Anmeldung), angestupst
+(Anstupser auf „Heute", in „Neuigkeiten" und als Push-Symbol) und müde (alles gegessen, oder abends nichts mehr
+geplant). Farben stehen als Variablen oben in `public/app.css`; Textfarben haben eigene `*-ink`-Varianten mit
+ausreichend Kontrast.
+
+Schriften: Zen Old Mincho und Zen Maru Gothic, lokal ausgeliefert (nur der lateinische Zeichensatz). Das Siegel
+镬 stammt aus Ma Shan Zheng und ist als Pfad in `woki.js` eingebettet. Alle drei: SIL Open Font License.
