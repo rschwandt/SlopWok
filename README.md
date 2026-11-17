@@ -1,4 +1,4 @@
-# Kochrunde
+# SlopWok
 
 Essensplan, Einkauf und Kasse für mehrere Leute – als Web-App fürs Handy. Entstanden aus einer Einzelnutzer-App für
 einen veganen High-Protein-Monatsplan; dessen 41 Gerichte sind als Startbibliothek dabei.
@@ -27,7 +27,7 @@ npm start          # http://localhost:8787
 npm test
 ```
 
-Die Daten liegen in `data/kochrunde.db` (SQLite). Backup = diese Datei kopieren.
+Die Daten liegen in `data/slopwok.db` (SQLite; eine ältere `data/kochrunde.db` wird weiterbenutzt). Backup = diese Datei kopieren.
 
 | Variable | Bedeutung |
 | --- | --- |
@@ -43,7 +43,7 @@ Push-Benachrichtigungen und „Zum Home-Bildschirm" brauchen **HTTPS**. Am einfa
 laufen lassen und einen Reverse Proxy davor, z. B. Caddy:
 
 ```
-kochrunde.example.org {
+slopwok.example.org {
     reverse_proxy localhost:8787
 }
 ```

@@ -219,7 +219,7 @@ test('Monatsplan anwenden und Haushalt wechseln', async () => {
 
 test('Statische Dateien und Pfadschutz', async () => {
   assert.equal((await fetch(base + '/')).status, 200);
-  assert.match(await (await fetch(base + '/shared/dish.js')).text(), /kochrunde\.dish\/v1/);
+  assert.match(await (await fetch(base + '/shared/dish.js')).text(), /slopwok\.dish\/v1/);
   assert.notEqual((await fetch(base + '/shared/../server/api.js')).headers.get('content-type'), 'text/javascript; charset=utf-8x');
   const leak = await (await fetch(base + '/%2e%2e/server/api.js')).text();
   assert.ok(!leak.includes('createApi'));

@@ -7,6 +7,12 @@ import { openDb } from './db.js';
 import { createApi, HttpError } from './api.js';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+
+// Datenbank heißt slopwok.db; eine vorhandene kochrunde.db (vor der Umbenennung) wird weiterbenutzt.
+function dbPath(dir) {
+  const legacy = path.join(dir, 'kochrunde.db');
+  return fs.existsSync(legacy) ? legacy : path.join(dir, 'slopwok.db');
+}
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png',
@@ -19,7 +25,7 @@ const SECURITY = {
 };
 
 export function createServer(opts = {}) {
-  const db = opts.db || openDb(opts.dbFile || path.join(opts.dataDir || path.join(root, 'data'), 'kochrunde.db'));
+  const db = opts.db || openDb(opts.dbFile || dbPath(opts.dataDir || path.join(root, 'data')));
   const api = createApi(db, opts);
   const trustProxy = !!opts.trustProxy;
 
@@ -111,7 +117,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     dataDir: process.env.DATA_DIR, registrationCode: process.env.REGISTRATION_CODE || '',
     vapidSubject: process.env.VAPID_SUBJECT, trustProxy: process.env.TRUST_PROXY === '1'
   });
-  server.listen(port, process.env.HOST || '0.0.0.0', () => console.log('Kochrunde läuft auf http://localhost:' + port));
+  server.listen(port, process.env.HOST || '0.0.0.0', () => console.log('SlopWok läuft auf http://localhost:' + port));
   const stop = () => server.close(() => { server.db.close(); process.exit(0); });
   process.on('SIGINT', stop); process.on('SIGTERM', stop);
 }

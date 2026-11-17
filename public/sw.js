@@ -5,8 +5,8 @@ self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('push', e => {
   let data = {};
   try { data = e.data.json(); } catch { data = { body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(data.title || 'Kochrunde', {
-    body: data.body || '', tag: data.tag || 'kochrunde', icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', data: { url: data.url || '/' }
+  e.waitUntil(self.registration.showNotification(data.title || 'SlopWok', {
+    body: data.body || '', tag: data.tag || 'slopwok', icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', data: { url: data.url || '/' }
   }));
 });
 

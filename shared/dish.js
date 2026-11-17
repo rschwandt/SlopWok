@@ -1,7 +1,7 @@
-// Gerichteformat „kochrunde.dish/v1" – Prüfung und Normalisierung.
+// Gerichteformat „slopwok.dish/v1" – Prüfung und Normalisierung.
 // Läuft unverändert im Browser (Import-Vorschau) und auf dem Server (verbindliche Prüfung).
 
-export const FORMAT = 'kochrunde.dish/v1';
+export const FORMAT = 'slopwok.dish/v1';
 
 export const SLOTS = ['breakfast', 'lunch', 'snack', 'dinner'];
 export const SLOT_LABEL = { breakfast: 'Frühstück', lunch: 'Mittag', snack: 'Snack', dinner: 'Warmes Gericht', extra: 'Extra' };

@@ -1,4 +1,4 @@
-# Gerichteformat `kochrunde.dish/v1`
+# Gerichteformat `slopwok.dish/v1`
 
 Mit diesem JSON-Format kommen Rezepte in die App: **Gerichte → Importieren**. Es ist so gebaut, dass ein KI-Assistent es
 zuverlässig ausfüllen kann. Den fertigen Prompt dafür kopierst du in der App mit „Prompt kopieren"; er steht auch in
@@ -10,7 +10,7 @@ Geprüft wird an zwei Stellen mit demselben Code (`validateDish`): im Browser f�
 
 ```json
 {
-  "format": "kochrunde.dish/v1",
+  "format": "slopwok.dish/v1",
   "name": "Tofu-Erdnuss-Curry mit Spinat und Reis",
   "slot": "dinner",
   "minutes": 35,
@@ -30,7 +30,7 @@ Geprüft wird an zwei Stellen mit demselben Code (`validateDish`): im Browser f�
 }
 ```
 
-Mehrere Gerichte auf einmal: eine Liste `[ {...}, {...} ]` oder `{"format": "kochrunde.dish/v1", "dishes": [ ... ]}`
+Mehrere Gerichte auf einmal: eine Liste `[ {...}, {...} ]` oder `{"format": "slopwok.dish/v1", "dishes": [ ... ]}`
 (höchstens 100 pro Import). Text um das JSON herum und ```` ```json ````-Zäune werden ignoriert.
 
 ## Felder

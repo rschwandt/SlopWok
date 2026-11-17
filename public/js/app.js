@@ -17,14 +17,14 @@ let authMode = 'login', authError = '', pendingJoin = '';
 function renderAuth() {
   const reg = authMode === 'register';
   return '<div class="auth"><img class="logo" src="/icons/icon.svg" alt="" width="64" height="64">' +
-    '<div><h1>Kochrunde</h1><p class="muted">Gemeinsam Essen planen, einkaufen und dranbleiben.</p></div>' +
+    '<div><h1>SlopWok</h1><p class="muted">Gemeinsam Essen planen, einkaufen und dranbleiben.</p></div>' +
     '<div class="seg-tabs"><button data-act="authMode" data-v="login" aria-pressed="' + !reg + '">Anmelden</button><button data-act="authMode" data-v="register" aria-pressed="' + reg + '">Neu hier</button></div>' +
     '<form class="card" data-form="auth" autocomplete="on">' +
     '<div class="field"><label for="a-name">Benutzername</label><input id="a-name" name="name" required minlength="3" maxlength="24" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username"></div>' +
     (reg ? '<div class="field"><label for="a-display">Anzeigename</label><input id="a-display" name="display" maxlength="40" placeholder="So sehen dich die anderen" autocomplete="nickname"></div>' : '') +
     '<div class="field"><label for="a-pass">Passwort</label><input id="a-pass" name="password" type="password" required minlength="8" autocomplete="' + (reg ? 'new-password' : 'current-password') + '">' + (reg ? '<span class="note">Mindestens 8 Zeichen.</span>' : '') + '</div>' +
     (reg ? '<div class="field"><label for="a-invite">Einladungscode (optional)</label><input id="a-invite" name="invite" maxlength="16" value="' + esc(pendingJoin) + '" autocapitalize="characters" autocomplete="off"><span class="note">Hast du einen Code von jemandem aus deinem Haushalt? Dann landest du direkt dort. Ohne Code startest du allein und kannst später beitreten.</span></div>' : '') +
-    (reg && S.config.registrationCode ? '<div class="field"><label for="a-code">Registrierungscode</label><input id="a-code" name="code" required autocomplete="off"><span class="note">Den bekommst du von der Person, die diese Kochrunde betreibt.</span></div>' : '') +
+    (reg && S.config.registrationCode ? '<div class="field"><label for="a-code">Registrierungscode</label><input id="a-code" name="code" required autocomplete="off"><span class="note">Den bekommst du von der Person, die diese SlopWok betreibt.</span></div>' : '') +
     (authError ? '<p class="err" role="alert">' + esc(authError) + '</p>' : '') +
     '<button class="btn wide">' + (reg ? 'Konto anlegen' : 'Anmelden') + '</button></form></div>';
 }

@@ -66,7 +66,7 @@ function render() {
 
   let p;
   if (!push.supported) p = '<p class="note">' + (isIos() && !isStandalone()
-    ? 'Auf dem iPhone gehen Benachrichtigungen erst, wenn Kochrunde auf dem Home-Bildschirm liegt: Teilen-Symbol, dann <b>Zum Home-Bildschirm</b>. Danach die App von dort öffnen und hier einschalten.'
+    ? 'Auf dem iPhone gehen Benachrichtigungen erst, wenn SlopWok auf dem Home-Bildschirm liegt: Teilen-Symbol, dann <b>Zum Home-Bildschirm</b>. Danach die App von dort öffnen und hier einschalten.'
     : 'Dieser Browser unterstützt keine Push-Benachrichtigungen. Anstupser siehst du trotzdem unter <b>Leute</b>.') + '</p>';
   else if (push.state === 'denied') p = '<p class="note">Benachrichtigungen sind für diese Seite im Browser blockiert. Erlaube sie in den Website-Einstellungen und lade neu.</p>';
   else if (push.state === 'on') p = '<p class="okmsg">Auf diesem Gerät eingeschaltet.</p><div class="actions"><button class="linkbtn" data-act="pushTest">' + ico.bell + 'Test schicken</button><button class="linkbtn" data-act="pushOff">Ausschalten</button></div>';
@@ -80,7 +80,7 @@ function render() {
       ['equal', 'Gleichmäßig', 'Alle zahlen gleich viel, egal wer wie oft mitisst.'],
       ['usage', 'Nach Verbrauch', 'Anteil nach geplanten Kalorien in den Tagen, für die eingekauft wurde.']]) + '</div>') + '</div>';
 
-  h += '<div class="card"><h2>Aufs Handy</h2><ol class="steps"><li>Diese Seite im Browser öffnen (iPhone: Safari).</li><li>Teilen-Symbol bzw. Menü <b>•••</b> antippen.</li><li><b>Zum Home-Bildschirm</b> wählen. Danach startet Kochrunde wie eine App.</li></ol></div>';
+  h += '<div class="card"><h2>Aufs Handy</h2><ol class="steps"><li>Diese Seite im Browser öffnen (iPhone: Safari).</li><li>Teilen-Symbol bzw. Menü <b>•••</b> antippen.</li><li><b>Zum Home-Bildschirm</b> wählen. Danach startet SlopWok wie eine App.</li></ol></div>';
 
   h += '<div class="card"><h2>Konto</h2><form class="stack" data-form="password"><div class="field"><label for="pw-old">Bisheriges Passwort</label><input id="pw-old" name="oldPassword" type="password" required autocomplete="current-password"></div>' +
     '<div class="field"><label for="pw-new">Neues Passwort</label><input id="pw-new" name="password" type="password" required minlength="8" autocomplete="new-password"></div>' +

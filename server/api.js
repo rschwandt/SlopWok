@@ -87,7 +87,7 @@ export function createApi(db, cfg = {}) {
     db.run('DELETE FROM notifications WHERE user_id = ? AND id NOT IN (SELECT id FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 100)', userId, userId);
     const subs = db.all('SELECT * FROM push_subs WHERE user_id = ?', userId);
     const jobs = subs.map(async s => {
-      const r = await sendPush(s, { title: title || 'Kochrunde', body: msg, tag: kind, url: kind === 'nudge' ? '/#today' : '/#people' }, vapid, subject, pushFetch);
+      const r = await sendPush(s, { title: title || 'SlopWok', body: msg, tag: kind, url: kind === 'nudge' ? '/#today' : '/#people' }, vapid, subject, pushFetch);
       if (r === 'gone') db.run('DELETE FROM push_subs WHERE endpoint = ?', s.endpoint);
       return r;
     });
@@ -658,7 +658,7 @@ export function createApi(db, cfg = {}) {
     return { ok: true };
   });
   route('POST', '/api/push/test', async c => {
-    const r = await notify(c.user.id, null, 'test', 'So sehen Benachrichtigungen von Kochrunde aus.', 'Test');
+    const r = await notify(c.user.id, null, 'test', 'So sehen Benachrichtigungen von SlopWok aus.', 'Test');
     return { sent: r.filter(x => x === 'ok').length, devices: r.length };
   });
 

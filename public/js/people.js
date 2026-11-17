@@ -73,7 +73,7 @@ const actions = {
   follow: async el => { await post('/api/follows', { userId: +el.dataset.id }); results = null; query = ''; await S.refresh(); },
   unfollow: async el => { await del('/api/follows/' + el.dataset.id); await S.refresh(); },
   copyInvite: el => copyText(el.dataset.link, 'Einladungslink kopiert'),
-  shareInvite: el => navigator.share({ title: 'Kochrunde', text: 'Komm in unseren Haushalt bei Kochrunde:', url: el.dataset.link }).catch(() => {}),
+  shareInvite: el => navigator.share({ title: 'SlopWok', text: 'Komm in unseren Haushalt bei SlopWok:', url: el.dataset.link }).catch(() => {}),
   newInvite: async () => { S.me = await post('/api/household/invite'); toast('Neuer Code. Der alte gilt nicht mehr.'); S.render(); },
   leave: () => {
     openSheet({

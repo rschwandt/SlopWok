@@ -1,4 +1,4 @@
-// Ansicht „Gerichte": Bibliothek, eigenes Gericht anlegen/ändern, Import im Format kochrunde.dish/v1.
+// Ansicht „Gerichte": Bibliothek, eigenes Gericht anlegen/ändern, Import im Format slopwok.dish/v1.
 import { S, post, api, del, esc, ico, nf, pills, head, chip, settingsBtn, toast, copyText, fmtQ, loadDishes, openSheet, closeSheet, drawSheet } from './core.js';
 import { SLOTS, SLOT_LABEL, CATEGORIES, UNITS, validateDish, parseImport, exportDish, LLM_PROMPT, FORMAT } from '/shared/dish.js';
 import { openMealSheet } from './today.js';
