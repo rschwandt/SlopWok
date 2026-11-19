@@ -180,3 +180,30 @@ export function streak(db, user, today) {
   }
   return n;
 }
+
+// Pro Tag höchstens ein vorgeschlagenes warmes Gericht im Haushalt. Entsteht z. B., wenn jemand mit eigenem
+// Vorschlagsplan einem Haushalt beitritt. Weitere Vorschläge (noch nicht gegessen, niemand kocht) gehen im
+// ältesten auf: ihre Esser essen dort mit, ihr Rest für morgen wandert mit. Gibt die Zahl der aufgelösten zurück.
+export function mergeAutoDinners(db, hhId, from) {
+  const byDate = new Map();
+  for (const m of db.all("SELECT * FROM meals WHERE household_id = ? AND date >= ? AND slot = 'dinner' AND auto = 1 AND leftover_of IS NULL ORDER BY date, id", hhId, from))
+    (byDate.get(m.date) || byDate.set(m.date, []).get(m.date)).push(m);
+  let n = 0;
+  for (const [keep, ...others] of byDate.values()) {
+    for (const o of others) {
+      if (o.cook_id || db.get('SELECT 1 FROM meal_eaters WHERE meal_id = ? AND eaten = 1', o.id)) continue;
+      for (const e of db.all('SELECT user_id, portions FROM meal_eaters WHERE meal_id = ?', o.id))
+        db.run('INSERT OR IGNORE INTO meal_eaters (meal_id, user_id, portions) VALUES (?, ?, ?)', keep.id, e.user_id, e.portions);
+      for (const kid of db.all('SELECT id FROM meals WHERE leftover_of = ?', o.id)) {
+        const target = db.get('SELECT id FROM meals WHERE leftover_of = ? ORDER BY id LIMIT 1', keep.id);
+        if (!target) { db.run('UPDATE meals SET leftover_of = ?, dish_id = ? WHERE id = ?', keep.id, keep.dish_id, kid.id); continue; }
+        for (const e of db.all('SELECT user_id, portions, eaten FROM meal_eaters WHERE meal_id = ?', kid.id))
+          db.run('INSERT OR IGNORE INTO meal_eaters (meal_id, user_id, portions, eaten) VALUES (?, ?, ?, ?)', target.id, e.user_id, e.portions, e.eaten);
+      }
+      db.run('DELETE FROM meals WHERE id = ?', o.id); // übrige Reste hängen per ON DELETE CASCADE dran
+      n++;
+    }
+  }
+  return n;
+}
+

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { mergeAutoDinners } from './logic.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -117,7 +118,26 @@ export function openDb(file) {
   };
   seed(api);
   splitSoloMeals(api);
+  mergeDinnersOnce(api);
   return api;
+}
+
+// Einmalig: Haushalte, in die jemand samt eigenem Vorschlagsplan gezogen ist, hatten mehrere vorgeschlagene warme
+// Gerichte pro Tag. Die werden zusammengelegt; außerdem doppelte eigene Mahlzeiten (gleiches Gericht, gleiche
+// Mahlzeit, gleicher Tag – Rest der Aufteilung durch splitSoloMeals) entfernt, solange nichts davon gegessen ist.
+function mergeDinnersOnce(db) {
+  if (db.kv.get('mergeDinners')) return;
+  const n = new Date(), today = n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0');
+  db.tx(() => {
+    for (const h of db.all('SELECT id FROM households')) mergeAutoDinners(db, h.id, today);
+    db.run(`DELETE FROM meals WHERE id IN (
+      SELECT m2.id FROM meals m1 JOIN meals m2 ON m2.household_id = m1.household_id AND m2.date = m1.date AND m2.slot = m1.slot
+        AND m2.dish_id = m1.dish_id AND m2.id > m1.id
+      JOIN meal_eaters e1 ON e1.meal_id = m1.id JOIN meal_eaters e2 ON e2.meal_id = m2.id AND e2.user_id = e1.user_id
+      WHERE m1.date >= ? AND m1.slot != 'dinner' AND m1.leftover_of IS NULL AND m2.leftover_of IS NULL AND e2.eaten = 0
+        AND (SELECT COUNT(*) FROM meal_eaters x WHERE x.meal_id = m2.id) = 1)`, today);
+    db.kv.set('mergeDinners', 1);
+  });
 }
 
 // Seit nur noch das warme Gericht gemeinsam ist: ältere gemeinsame Frühstücke, Mittage, Snacks und Extras

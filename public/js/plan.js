@@ -24,12 +24,15 @@ function render() {
   h += '<section class="week">';
   for (let k = 0; k < 7; k++) {
     const d = addDays(from, k), day = list.filter(m => m.date === d);
-    const dinner = day.filter(m => m.slot === 'dinner');
+    // Wie unter „Heute": eigene warme Gerichte vorn, die der anderen nur als Hinweis
+    const eats = m => m.eaters.some(e => e.userId === myId());
+    const dinner = day.filter(m => m.slot === 'dinner' && eats(m)), without = day.filter(m => m.slot === 'dinner' && !eats(m));
     const rest = day.filter(m => m.slot !== 'dinner' && m.slot !== 'extra' && m.eaters.some(e => e.userId === myId()));
     rest.sort((x, y) => ORDER.indexOf(x.slot) - ORDER.indexOf(y.slot));
     let p = 0;
     for (const m of day) { const e = m.eaters.find(x => x.userId === myId()); if (e) p += m.protein * e.portions; }
-    const main = dinner.length ? dinner.map(m => esc(m.name)).join(' · ') : '<span class="muted">Kein warmes Gericht geplant</span>';
+    const main = dinner.length ? dinner.map(m => esc(m.name)).join(' · ')
+      : '<span class="muted">' + (without.length ? 'Ohne dich: ' + without.map(m => esc(shortName(m.name))).join(' · ') : 'Kein warmes Gericht geplant') + '</span>';
     const bits = [];
     for (const m of dinner) {
       if (!solo()) {

@@ -66,6 +66,8 @@ function moveUser(db, user, targetHhId, today) {
   if (left === 0) {
     db.run('UPDATE meals SET household_id = ? WHERE household_id = ?', targetHhId, old);
     db.run('DELETE FROM households WHERE id = ?', old);
+    // Der mitgebrachte Vorschlagsplan darf kein zweites warmes Gericht neben dem des Haushalts aufmachen
+    L.mergeAutoDinners(db, targetHhId, today);
   } else {
     removeFromFutureMeals(db, user.id, old, today);
     db.run('UPDATE trips SET shopper_id = NULL WHERE shopper_id = ? AND household_id = ? AND done_at IS NULL', user.id, old);

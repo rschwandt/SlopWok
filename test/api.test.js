@@ -254,6 +254,23 @@ test('Statische Dateien und Pfadschutz', async () => {
   assert.ok(!leak.includes('createApi'));
 });
 
+test('Beitritt mit eigenem Vorschlagsplan: ein gemeinsames warmes Gericht pro Tag', async () => {
+  const eva = client(), finn = client();
+  const E = await eva.post('/api/register', { name: 'eva', password: 'geheim123' });
+  const F = await finn.post('/api/register', { name: 'finn', password: 'geheim123' });
+  for (const c of [eva, finn]) { await c.patch('/api/me', { settings: { mode: 'auto' } }); await c.get(`/api/meals?from=${today}&to=${today}`); }
+  await finn.post('/api/household/join', { code: E.household.invite });
+  const meals = (await eva.get(`/api/meals?from=${today}&to=${L.addDays(today, 6)}`)).meals;
+  for (let i = 0; i < 7; i++) {
+    const d = L.addDays(today, i), day = meals.filter(m => m.date === d);
+    const dinners = day.filter(m => m.slot === 'dinner');
+    assert.equal(dinners.length, 1, d);
+    assert.deepEqual(dinners[0].eaters.map(e => e.userId).sort(), [E.user.id, F.user.id].sort());
+    if (i) assert.equal(day.filter(m => m.slot === 'lunch' && m.leftoverOf).length, 1, d); // ein Rest, für beide
+    for (const slot of ['breakfast', 'snack']) assert.equal(day.filter(m => m.slot === slot).length, 2, d + slot);
+  }
+});
+
 test('Vorschlagsmodus füllt freie Mahlzeiten, tauscht und respektiert Entferntes', async () => {
   const dora = client();
   const D = await dora.post('/api/register', { name: 'dora', password: 'geheim-geheim' });
