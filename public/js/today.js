@@ -1,4 +1,4 @@
-// Ansicht „Heute": Tagesziel, Mahlzeiten abhaken, Mahlzeiten planen (auch gemeinsam) und Extras eintragen.
+// Ansicht „Heute": Tagesziel, Mahlzeiten abhaken, Mahlzeiten planen (das warme Gericht gemeinsam) und Extras eintragen.
 import { S, get, post, patch, del, esc, ico, nf, pills, head, chip, avatar, settingsBtn, members, memberName, solo, toast, fmtCount, fmtNice, portions, shortName,
   todayISO, addDays, wdOf, WDL, WD, dateLabel, openSheet, closeSheet, drawSheet } from './core.js';
 import { SLOTS, SLOT_LABEL } from '/shared/dish.js';
@@ -60,7 +60,8 @@ const wokiCard = (title, text) => '<div class="woki-card">' + woki('sleepy') + '
 function render() {
   const date = S.date, isToday = date === todayISO(), g = S.me.user.settings;
   const day = loaded === date ? meals.filter(m => m.date === date) : [];
-  const my = day.filter(mine), other = day.filter(m => !mine(m));
+  // Gemeinsam gibt es nur das warme Gericht – die übrigen Mahlzeiten der anderen gehen dich nichts an
+  const my = day.filter(mine), other = day.filter(m => !mine(m) && m.slot === 'dinner');
   let planP = 0, planK = 0, eatP = 0, eatK = 0;
   for (const m of my) { const e = mine(m), p = m.protein * e.portions, k = m.kcal * e.portions; planP += p; planK += k; if (e.eaten) { eatP += p; eatK += k; } }
   let h = '<div class="brand">' + woki('happy') + '<span>SlopWok</span></div>' + head(isToday ? 'Heute' : addDays(todayISO(), 1) === date ? 'Morgen' : addDays(todayISO(), -1) === date ? 'Gestern' : 'Tag', WDL[wdOf(date)] + ',<br>' + dateLabel(date),
@@ -100,7 +101,7 @@ function render() {
       '<button class="addbtn x" data-act="delMeal" data-id="' + m.id + '" aria-label="' + esc(m.name) + ' entfernen">' + ico.close + '</button></div>').join('') +
     '</div><div class="actions"><button class="linkbtn" data-act="addExtra">' + ico.plus + 'Extra eintragen</button></div></article>';
   if (other.length) {
-    h += '<article class="card"><div><span class="eyebrow">Im Haushalt</span><h3>Ohne dich geplant</h3></div><div class="rows">' +
+    h += '<article class="card"><div><span class="eyebrow">Im Haushalt</span><h3>Warmes Gericht ohne dich</h3></div><div class="rows">' +
       other.map(m => '<div class="row"><span class="grow"><span class="nm">' + (m.leftoverOf ? 'Rest: ' : '') + esc(m.name) + '</span><span class="why">' + SLOT_LABEL[m.slot] + ' · ' + m.eaters.map(e => esc(memberName(e.userId))).join(', ') + '</span></span>' +
         (m.custom || m.leftoverOf ? '' : '<button class="linkbtn" data-act="joinMeal" data-id="' + m.id + '">Mitessen</button>') + '</div>').join('') + '</div></article>';
   }
@@ -144,6 +145,13 @@ export async function openMealSheet({ date, slot, meal, dishId }) {
       '<span class="why">' + nf(d.protein) + ' g Protein · ' + nf(d.kcal) + ' kcal' + (d.minutes ? ' · ' + d.minutes + ' Min.' : '') + (d.mine ? ' · von dir' : '') + '</span></span></button>').join('')
       : '<p class="note">Nichts gefunden. Unter <b>Gerichte</b> kannst du eigene anlegen oder importieren.</p>';
   };
+  // Mitessen und für andere auswählen gibt es nur beim warmen Gericht (und seinem Rest am Folgetag)
+  const together = () => !solo() && (st.slot === 'dinner' || !!st.leftoverOf);
+  const setSlot = slot => {
+    st.slot = slot;
+    if (slot === 'dinner' || st.leftoverOf) { if (!st.id && Object.keys(st.eaters).length < 2) for (const m of members()) if (st.eaters[m.id] == null) st.eaters[m.id] = defPortion(m.id); return; }
+    st.eaters = { [myId()]: st.eaters[myId()] || 1 }; st.left.clear(); st.cookId = null;
+  };
   const total = () => Object.values(st.eaters).reduce((a, b) => a + b, 0) + st.left.size;
 
   const render = () => {
@@ -159,13 +167,14 @@ export async function openMealSheet({ date, slot, meal, dishId }) {
     if (!st.leftoverOf) h += '<div class="row2"><div class="field"><label for="m-date">Tag</label><input id="m-date" type="date" data-change="date" value="' + st.date + '"></div>' +
       '<div class="field"><label for="m-slot">Mahlzeit</label><select id="m-slot" data-change="slot">' + SLOTS.map(s => '<option value="' + s + '"' + (s === st.slot ? ' selected' : '') + '>' + SLOT_LABEL[s] + '</option>').join('') + '</select></div></div>';
     if (!st.custom) {
-      h += '<div class="card"><span class="eyebrow">' + (solo() ? 'Wie viel isst du?' : 'Wer isst mit?') + '</span><div class="rows">' + members().map(m => {
+      const people = together() ? members() : members().filter(m => m.id === myId());
+      h += '<div class="card"><span class="eyebrow">' + (people.length < 2 ? 'Wie viel isst du?' : 'Wer isst mit?') + '</span><div class="rows">' + people.map(m => {
         const on = st.eaters[m.id] != null;
-        return '<div class="row">' + (solo() ? '' : '<button class="check" role="checkbox" aria-checked="' + on + '" aria-label="' + esc(m.display) + ' isst mit" data-act="eater" data-id="' + m.id + '">' + ico.tick + '</button>') +
+        return '<div class="row">' + (people.length < 2 ? '' : '<button class="check" role="checkbox" aria-checked="' + on + '" aria-label="' + esc(m.display) + ' isst mit" data-act="eater" data-id="' + m.id + '">' + ico.tick + '</button>') +
           '<span class="grow"><span class="nm">' + esc(m.id === myId() ? 'Du' : m.display) + '</span></span>' +
           (on ? '<span class="stepper"><button data-act="step" data-id="' + m.id + '" data-d="-0.5" aria-label="weniger">−</button><span>' + fmtCount(st.eaters[m.id]) + ' P.</span><button data-act="step" data-id="' + m.id + '" data-d="0.5" aria-label="mehr">+</button></span>' : '') + '</div>';
-      }).join('') + '</div></div>';
-      if (!st.leftoverOf) {
+      }).join('') + '</div>' + (together() || solo() || st.leftoverOf ? '' : '<span class="note">Zusammen esst ihr nur das warme Gericht. ' + SLOT_LABEL[st.slot] + ' planst du für dich.</span>') + '</div>';
+      if (!st.leftoverOf && st.slot === 'dinner') {
         if (!solo()) h += '<div class="field"><span class="lbl">Wer kocht?</span><div class="chips">' + chip('Offen', st.cookId == null, 'data-act="cook" data-id=""') +
           members().map(m => chip(esc(m.id === myId() ? 'Ich' : m.display), st.cookId === m.id, 'data-act="cook" data-id="' + m.id + '"')).join('') + '</div></div>';
         h += '<div class="field"><span class="lbl">Rest als Mittag am nächsten Tag</span><div class="chips">' +
@@ -184,7 +193,7 @@ export async function openMealSheet({ date, slot, meal, dishId }) {
     title: st.id ? 'Mahlzeit ändern' : SLOT_LABEL[st.slot] + ' am ' + WD[wdOf(st.date)] + ', ' + dateLabel(st.date),
     render,
     onInput: el => { st.q = el.value; document.getElementById('dishlist').innerHTML = dishList(); },
-    onChange: el => { if (el.dataset.change === 'date' && el.value) st.date = el.value; if (el.dataset.change === 'slot') st.slot = el.value; },
+    onChange: el => { if (el.dataset.change === 'date' && el.value) st.date = el.value; if (el.dataset.change === 'slot') { setSlot(el.value); drawSheet(); } },
     actions: {
       all: el => { st.all = el.dataset.v === '1'; drawSheet(); },
       pick: el => { st.dishId = +el.dataset.id; st.step = 'edit'; drawSheet(); },
@@ -205,7 +214,7 @@ export async function openMealSheet({ date, slot, meal, dishId }) {
       save: async () => {
         const eaters = Object.entries(st.eaters).map(([userId, p]) => ({ userId: +userId, portions: p }));
         if (!eaters.length) return toast('Mindestens eine Person muss mitessen.', true);
-        const leftover = [...st.left].map(userId => ({ userId, portions: 1 }));
+        const leftover = st.slot === 'dinner' ? [...st.left].map(userId => ({ userId, portions: 1 })) : [];
         if (st.id) {
           const body = { eaters, cookId: st.cookId };
           if (!st.leftoverOf) { body.date = st.date; body.slot = st.slot; if (!st.custom) body.dishId = st.dishId; if (leftKey() !== st.leftOrig) body.leftover = leftover; }

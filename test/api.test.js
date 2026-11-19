@@ -111,6 +111,31 @@ test('Gemeinsame Mahlzeit mit Rest am Folgetag, Abhaken, Fortschritt', async () 
   assert.equal((await ben.get('/api/people?today=' + today)).household.find(p => p.id === A.user.id).streak, 1);
 });
 
+test('Nur das warme Gericht ist gemeinsam, alles andere plant jede Person für sich', async () => {
+  const d = L.addDays(today, 50), both = [{ userId: A.user.id, portions: 1 }, { userId: B.user.id, portions: 1 }];
+  // Frühstück für zwei oder für jemand anderen geht nicht
+  assert.equal((await anna.post('/api/meals', { date: d, slot: 'breakfast', dishId: oats.id, eaters: both })).status, 400);
+  assert.equal((await anna.post('/api/meals', { date: d, slot: 'snack', dishId: oats.id, eaters: [both[1]] })).status, 400);
+  const mine = (await anna.post('/api/meals', { date: d, slot: 'breakfast', dishId: oats.id, eaters: [both[0]], cookId: B.user.id,
+    leftover: [both[1]] })).meal;
+  assert.equal(mine.cookId, null);
+  assert.equal(mine.leftoverPortions, 0);
+  // Ben kann Annas Frühstück weder mitessen noch ändern, tauschen oder löschen
+  assert.equal((await ben.patch('/api/meals/' + mine.id, { eaters: both })).status, 403);
+  assert.equal((await ben.del('/api/meals/' + mine.id)).status, 403);
+  assert.equal((await ben.post('/api/meals/' + mine.id + '/swap', {})).status, 403);
+  // Ein gemeinsames warmes Gericht lässt sich nicht zum Frühstück machen, ein eigenes schon
+  const din = (await anna.post('/api/meals', { date: d, slot: 'dinner', dishId: chili.id, eaters: both, leftover: [both[1]] })).meal;
+  assert.equal((await anna.patch('/api/meals/' + din.id, { slot: 'lunch' })).status, 400);
+  const solo = (await anna.patch('/api/meals/' + din.id, { slot: 'lunch', eaters: [both[0]] })).meal;
+  assert.equal(solo.slot, 'lunch');
+  assert.equal((await anna.get(`/api/meals?from=${d}&to=${L.addDays(d, 1)}`)).meals.filter(m => m.leftoverOf).length, 0);
+  // Ben darf beim warmen Gericht mitessen
+  const din2 = (await ben.post('/api/meals', { date: d, slot: 'dinner', dishId: chili.id, eaters: [both[1]] })).meal;
+  assert.equal((await anna.patch('/api/meals/' + din2.id, { eaters: both })).status, 200);
+  for (const m of [mine, solo, din2]) assert.equal((await anna.del('/api/meals/' + m.id)).status, 200);
+});
+
 test('Einkaufsliste rechnet Kochmenge und Packungen', async () => {
   await anna.patch('/api/household', { settings: { shopDays: [0, 1, 2, 3, 4, 5, 6] } });
   const s = await anna.get('/api/shopping?date=' + today);

@@ -3,8 +3,9 @@
 Essensplan, Einkauf und Kasse für mehrere Leute – als Web-App fürs Handy. Entstanden aus einer Einzelnutzer-App für
 einen veganen High-Protein-Monatsplan; dessen 41 Gerichte sind als Startbibliothek dabei.
 
-- **Haushalt:** Per Einladungscode beitreten. Gemeinsame Mahlzeiten planen: wer isst wie viele Portionen mit, wer kocht,
-  wer nimmt den Rest am nächsten Tag als Mittag.
+- **Haushalt:** Per Einladungscode beitreten. Gemeinsam gegessen wird nur das warme Gericht am Abend: wer isst wie viele
+  Portionen mit, wer kocht, wer nimmt den Rest am nächsten Tag als Mittag. Frühstück, Mittag, Snack und Extras plant
+  jede Person nur für sich, die anderen sehen und ändern sie nicht.
 - **Einkauf:** Die Liste rechnet aus dem Plan die Mengen für alle Esser, rundet auf Packungen und sortiert nach Regal.
   Die App schlägt vor, wer dran ist (wer zuletzt am seltensten einkaufen war).
 - **Kasse:** Wer einkauft, trägt den Betrag ein. Aufgeteilt wird gleichmäßig oder nach Verbrauch (geplante Kalorien in

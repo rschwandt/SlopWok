@@ -116,7 +116,28 @@ export function openDb(file) {
     close: () => db.close()
   };
   seed(api);
+  splitSoloMeals(api);
   return api;
+}
+
+// Seit nur noch das warme Gericht gemeinsam ist: ältere gemeinsame Frühstücke, Mittage, Snacks und Extras
+// einmalig in je eine Mahlzeit pro Person aufteilen (Reste vom warmen Gericht bleiben gemeinsam).
+function splitSoloMeals(db) {
+  if (db.kv.get('soloMeals')) return;
+  db.tx(() => {
+    const shared = db.all(`SELECT m.* FROM meals m WHERE m.slot != 'dinner' AND m.leftover_of IS NULL
+                           AND (SELECT COUNT(*) FROM meal_eaters e WHERE e.meal_id = m.id) > 1`);
+    for (const m of shared) {
+      const [, ...rest] = db.all('SELECT * FROM meal_eaters WHERE meal_id = ? ORDER BY user_id', m.id);
+      for (const e of rest) {
+        const id = db.insert('INSERT INTO meals (household_id, date, slot, dish_id, custom, auto, created_by, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          m.household_id, m.date, m.slot, m.dish_id, m.custom, m.auto, m.created_by, m.created);
+        db.run('UPDATE meal_eaters SET meal_id = ? WHERE meal_id = ? AND user_id = ?', id, m.id, e.user_id);
+      }
+    }
+    db.run("UPDATE meals SET cook_id = NULL WHERE slot != 'dinner'");
+    db.kv.set('soloMeals', 1);
+  });
 }
 
 // Mitgelieferte Gerichte einspielen bzw. aktualisieren (erkennbar am key, gehören niemandem).

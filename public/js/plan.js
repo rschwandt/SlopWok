@@ -54,9 +54,9 @@ function openTemplateSheet() {
     title: 'Monatsplan eintragen',
     render: () => '<div class="row2"><div class="field"><label for="t-start">Start</label><input id="t-start" type="date" data-change="start" value="' + st.start + '"></div>' +
       '<div class="field"><span class="lbl">Wochen</span><div class="chips">' + [1, 2, 4, 8].map(w => chip(w, st.weeks === w, 'data-act="weeks" data-v="' + w + '"')).join('') + '</div></div></div>' +
-      (solo() ? '' : '<div class="field"><span class="lbl">Für wen?</span><div class="chips">' + members().map(m => chip(esc(m.id === myId() ? 'Mich' : m.display), st.who.has(m.id), 'data-act="who" data-id="' + m.id + '"')).join('') + '</div></div>') +
+      (solo() ? '' : '<div class="field"><span class="lbl">Warmes Gericht für wen?</span><div class="chips">' + members().map(m => chip(esc(m.id === myId() ? 'Mich' : m.display), st.who.has(m.id), 'data-act="who" data-id="' + m.id + '"')).join('') + '</div></div>') +
       '<div class="field"><span class="lbl">Was soll rein?</span><div class="chips">' + chip('Frühstück', st.breakfast, 'data-act="opt" data-v="breakfast"') + chip('Snack', st.snack, 'data-act="opt" data-v="snack"') + chip('Rest als Mittag', st.leftover, 'data-act="opt" data-v="leftover"') + '</div>' +
-      '<span class="note">Das warme Gericht ist immer dabei. Portionsgrößen kommen aus den Einstellungen jeder Person.</span></div>' +
+      '<span class="note">Das warme Gericht ist immer dabei. Portionsgrößen kommen aus den Einstellungen jeder Person.' + (solo() ? '' : ' Frühstück und Snack trägt es nur für dich ein, die anderen planen die selbst.') + '</span></div>' +
       '<button class="btn wide" data-act="apply">Eintragen</button>',
     onChange: el => { if (el.value) st.start = el.value; },
     actions: {

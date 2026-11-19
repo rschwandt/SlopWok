@@ -40,6 +40,10 @@ function cents(v) {
 }
 const date = v => (L.isIso(v) ? v : bad('Ungültiges Datum.'));
 const MEAL_SLOTS = [...SLOTS, 'extra'];
+// Gemeinsam gegessen (und für andere ausgewählt) wird nur das warme Gericht – und sein Rest am Folgetag.
+// Frühstück, Mittag, Snack und Extras plant jede Person nur für sich.
+const SOLO_MSG = 'Zusammen esst ihr nur das warme Gericht. Frühstück, Mittag, Snack und Extras plant jede Person für sich.';
+const isShared = m => m.slot === 'dinner' || !!m.leftover_of;
 
 const publicUser = u => ({ id: u.id, name: u.name, display: u.display });
 const membersOf = (db, hhId) => db.all('SELECT * FROM users WHERE household_id = ? ORDER BY id', hhId);
@@ -295,6 +299,12 @@ export function createApi(db, cfg = {}) {
     setEaters(id, eaters);
   }
   const oneMeal = id => L.loadMeals(db, 'm.id = ?', [id])[0];
+  // Eigene Mahlzeit einer anderen Person? Dann darf man sie weder ändern noch löschen.
+  function ownOnly(c, m) {
+    if (isShared(m)) return;
+    if (!db.get('SELECT 1 FROM meal_eaters WHERE meal_id = ? AND user_id = ?', m.id, c.user.id)) bad('Das ist die Mahlzeit von jemand anderem.', 403);
+  }
+  const soloEaters = (c, eaters) => { if (eaters.length > 1 || (eaters[0] && eaters[0].userId !== c.user.id)) bad(SOLO_MSG); };
 
   route('GET', '/api/meals', c => {
     const from = date(c.query.from), to = date(c.query.to);
@@ -312,8 +322,9 @@ export function createApi(db, cfg = {}) {
       custom = JSON.stringify({ name: text(b.custom.name, 80, 1), protein: Math.round(p), kcal: Math.round(k) });
     } else dishId = (visibleDish(c, int(b.dishId)) || bad('Gericht nicht gefunden.', 404)).id;
     const eaters = eatersIn(c, b.eaters);
-    const left = b.leftover && !custom ? eatersIn(c, b.leftover, true) : [];
-    const cookId = b.cookId != null && memberIds(c).has(int(b.cookId)) ? int(b.cookId) : null;
+    if (slot !== 'dinner') soloEaters(c, eaters);
+    const left = b.leftover && !custom && slot === 'dinner' ? eatersIn(c, b.leftover, true) : [];
+    const cookId = slot === 'dinner' && b.cookId != null && memberIds(c).has(int(b.cookId)) ? int(b.cookId) : null;
     const id = db.tx(() => {
       const mid = db.insert('INSERT INTO meals (household_id, date, slot, dish_id, custom, cook_id, created_by, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         c.hh.id, d, slot, dishId, custom, cookId, c.user.id, Date.now());
@@ -325,6 +336,13 @@ export function createApi(db, cfg = {}) {
   });
   route('PATCH', '/api/meals/:id', c => {
     const m = hhMeal(c, c.params.id), b = c.body;
+    ownOnly(c, m);
+    const slot = !m.leftover_of && b.slot != null && MEAL_SLOTS.includes(b.slot) ? b.slot : m.slot;
+    const eaters = b.eaters ? eatersIn(c, b.eaters, true) : null;
+    if (slot !== 'dinner' && !m.leftover_of) {
+      const after = eaters || db.all('SELECT user_id AS userId FROM meal_eaters WHERE meal_id = ?', m.id);
+      soloEaters(c, after);
+    }
     db.tx(() => {
       if (b.dishId != null && !m.custom) {
         m.dish_id = (visibleDish(c, int(b.dishId)) || bad('Gericht nicht gefunden.', 404)).id;
@@ -336,19 +354,23 @@ export function createApi(db, cfg = {}) {
         db.run('UPDATE meals SET date = ? WHERE id = ?', m.date, m.id);
         if (shift) for (const k of db.all('SELECT id, date FROM meals WHERE leftover_of = ?', m.id)) db.run('UPDATE meals SET date = ? WHERE id = ?', L.addDays(k.date, shift), k.id);
       }
-      if (b.slot != null && MEAL_SLOTS.includes(b.slot)) db.run('UPDATE meals SET slot = ? WHERE id = ?', b.slot, m.id);
-      if ('cookId' in b) db.run('UPDATE meals SET cook_id = ? WHERE id = ?', b.cookId != null && memberIds(c).has(int(b.cookId)) ? int(b.cookId) : null, m.id);
-      if (b.eaters) {
-        const eaters = eatersIn(c, b.eaters, true);
+      if (slot !== m.slot) {
+        db.run('UPDATE meals SET slot = ? WHERE id = ?', slot, m.id);
+        // Kein warmes Gericht mehr: kein Rest für morgen, niemand kocht
+        if (slot !== 'dinner') { db.run('DELETE FROM meals WHERE leftover_of = ?', m.id); db.run('UPDATE meals SET cook_id = NULL WHERE id = ?', m.id); }
+      }
+      if ('cookId' in b && slot === 'dinner') db.run('UPDATE meals SET cook_id = ? WHERE id = ?', b.cookId != null && memberIds(c).has(int(b.cookId)) ? int(b.cookId) : null, m.id);
+      if (eaters) {
         if (!eaters.length) return db.run('DELETE FROM meals WHERE id = ?', m.id);
         setEaters(m.id, eaters);
       }
-      if ('leftover' in b && !m.leftover_of && !m.custom) setLeftover(c, m, b.leftover ? eatersIn(c, b.leftover, true) : []);
+      if ('leftover' in b && slot === 'dinner' && !m.leftover_of && !m.custom) setLeftover(c, m, b.leftover ? eatersIn(c, b.leftover, true) : []);
     });
     return { meal: oneMeal(m.id) || null };
   });
   route('DELETE', '/api/meals/:id', c => {
     const m = hhMeal(c, c.params.id);
+    ownOnly(c, m);
     db.tx(() => {
       // Im Vorschlagsmodus soll ein entfernter Vorschlag nicht sofort wiederkommen
       if (m.date >= c.today && MEAL_SLOTS.includes(m.slot))
@@ -362,6 +384,7 @@ export function createApi(db, cfg = {}) {
   // Anderes Gericht für dieselbe Mahlzeit vorschlagen lassen
   route('POST', '/api/meals/:id/swap', c => {
     const m = hhMeal(c, c.params.id);
+    ownOnly(c, m);
     if (!m.dish_id || m.leftover_of || !SLOTS.includes(m.slot)) bad('Diese Mahlzeit lässt sich nicht tauschen.');
     const seen = Array.isArray(c.body.seen) ? c.body.seen.map(Number).slice(0, 30) : [];
     const next = auto.suggest(c, m.slot, m.date, [m.dish_id, ...seen]) || auto.suggest(c, m.slot, m.date, [m.dish_id]) || bad('Kein anderes passendes Gericht im Fundus.');
@@ -390,12 +413,17 @@ export function createApi(db, cfg = {}) {
     const portion = Object.fromEntries(c.members.map(m => [m.id, L.userSettings(m).portion]));
     const dishId = Object.fromEntries(db.all('SELECT id, key FROM dishes WHERE key IS NOT NULL AND deleted = 0').map(r => [r.key, r.id]));
     const end = L.addDays(start, weeks * 7);
-    const taken = new Set(db.all('SELECT date, slot FROM meals WHERE household_id = ? AND date BETWEEN ? AND ?', c.hh.id, start, end).map(r => r.date + r.slot));
+    // Belegt: das warme Gericht für den ganzen Haushalt, alles andere je Person
+    const taken = new Set();
+    for (const r of db.all('SELECT m.date, m.slot, e.user_id FROM meals m LEFT JOIN meal_eaters e ON e.meal_id = m.id WHERE m.household_id = ? AND m.date BETWEEN ? AND ?', c.hh.id, start, end))
+      taken.add(r.date + r.slot + (r.slot === 'dinner' ? '' : r.user_id));
+    const self = who.includes(c.user.id) ? [{ userId: c.user.id, portions: 1 }] : [];
     let n = 0;
     db.tx(() => {
-      const add = (d, slot, key, eaters, leftoverOf) => {
-        if (!dishId[key] || taken.has(d + slot)) return null;
-        taken.add(d + slot);
+      const add = (d, slot, key, list, leftoverOf) => {
+        const eaters = slot === 'dinner' ? list : list.filter(e => !taken.has(d + slot + e.userId));
+        if (!dishId[key] || !eaters.length || (slot === 'dinner' && taken.has(d + slot))) return null;
+        if (slot === 'dinner') taken.add(d + slot); else for (const e of eaters) taken.add(d + slot + e.userId);
         const id = db.insert('INSERT INTO meals (household_id, date, slot, dish_id, leftover_of, created_by, created) VALUES (?, ?, ?, ?, ?, ?, ?)',
           c.hh.id, d, slot, dishId[key], leftoverOf || null, c.user.id, Date.now());
         setEaters(id, eaters);
@@ -404,8 +432,8 @@ export function createApi(db, cfg = {}) {
       };
       for (let i = 0; i < weeks * 7; i++) {
         const d = L.addDays(start, i), wd = L.wdOf(d), one = who.map(userId => ({ userId, portions: 1 }));
-        if (c.body.breakfast !== false) add(d, 'breakfast', tpl.breakfast[wd], one);
-        if (c.body.snack !== false) add(d, 'snack', tpl.snack[wd], one);
+        if (c.body.breakfast !== false) add(d, 'breakfast', tpl.breakfast[wd], self);
+        if (c.body.snack !== false) add(d, 'snack', tpl.snack[wd], self);
         const key = tpl.dinners[i % tpl.dinners.length];
         const dinner = add(d, 'dinner', key, who.map(userId => ({ userId, portions: portion[userId] || 1 })));
         if (dinner && c.body.leftover !== false) add(L.addDays(d, 1), 'lunch', key, one, dinner);

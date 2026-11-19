@@ -82,10 +82,14 @@ export function makeAuto(db) {
           if (slot === 'dinner' && dinnerDays.has(d)) continue; // es gibt schon ein warmes Gericht im Haushalt
           const users = autos.filter(u => wants(u, d, slot));
           if (!users.length) continue;
+          if (slot !== 'dinner') {
+            // Nur das warme Gericht ist gemeinsam – alles andere bekommt jede Person einzeln
+            for (const u of users) { const dishId = pick(slot, d, targetFor([u], slot)); if (dishId) add(d, slot, dishId, [u]); }
+            continue;
+          }
           const dishId = pick(slot, d, targetFor(users, slot));
           if (!dishId) continue;
           const id = add(d, slot, dishId, users);
-          if (slot !== 'dinner') continue;
           dinnerDays.add(d);
           const next = L.addDays(d, 1);
           const rest = users.filter(u => u.s.autoLeftover && wants(u, next, 'lunch'));
