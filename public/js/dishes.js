@@ -1,6 +1,6 @@
 // Ansicht „Gerichte": Bibliothek, eigenes Gericht anlegen/ändern, Import im Format slopwok.dish/v1.
-import { S, post, api, del, esc, ico, nf, pills, head, chip, settingsBtn, toast, copyText, fmtQ, loadDishes, openSheet, closeSheet, drawSheet } from './core.js';
-import { SLOTS, SLOT_LABEL, CATEGORIES, UNITS, validateDish, parseImport, exportDish, LLM_PROMPT, FORMAT } from '/shared/dish.js';
+import { S, post, api, del, esc, ico, nf, pills, head, chip, settingsBtn, toast, copyText, fmtQ, loadDishes, openSheet, closeSheet, drawSheet, sourceHtml } from './core.js';
+import { SLOTS, SLOT_LABEL, CATEGORIES, UNITS, validateDish, parseImport, exportDish, LLM_PROMPT, FORMAT, sourceLabel } from '/shared/dish.js';
 import { openMealSheet } from './today.js';
 
 let q = '', filter = 'all';
@@ -30,7 +30,7 @@ function openDish(d) {
       (d.ingredients.length ? '<ul class="ing">' + d.ingredients.map(i => '<li><span>' + esc(i.name) + '</span><span>' + fmtQ(i.amount, i.unit) + '</span></li>').join('') + '</ul>' : '') +
       (d.basics.length ? '<div class="basics"><b>Aus dem Vorrat:</b> ' + esc(d.basics.join(', ')) + '</div>' : '') +
       (d.steps.length ? '<ol class="steps">' + d.steps.map(s => '<li>' + esc(s) + '</li>').join('') + '</ol>' : '') +
-      (d.tip ? '<div class="note">' + esc(d.tip) + '</div>' : '') + (d.source ? '<div class="note">Quelle: ' + esc(d.source) + '</div>' : '') + '</div>' +
+      (d.tip ? '<div class="note">' + esc(d.tip) + '</div>' : '') + sourceHtml(d.source) + '</div>' +
       '<button class="btn wide" data-act="plan">' + ico.t_plan + 'Einplanen</button>' +
       '<div class="actions">' + (d.mine ? '<button class="linkbtn" data-act="edit">' + ico.edit + 'Bearbeiten</button>' : '<button class="linkbtn" data-act="copyEdit">' + ico.edit + 'Als eigenes Gericht anpassen</button>') +
       '<button class="linkbtn" data-act="json">' + ico.copy + 'JSON kopieren</button>' +
@@ -69,6 +69,7 @@ function openForm(src, id) {
     f('basics', 'Aus dem Vorrat (mit Komma getrennt)', 'placeholder="Olivenöl, Salz, Kreuzkümmel"') +
     '<div class="field"><label for="f-steps">Zubereitung (ein Schritt pro Zeile)</label><textarea id="f-steps" data-input="steps">' + esc(st.steps) + '</textarea></div>' +
     f('tip', 'Tipp (optional)') +
+    f('source', 'Quelle (optional)', 'inputmode="url" autocapitalize="off" spellcheck="false" placeholder="Link zur Rezeptseite oder z. B. Kochbuch, S. 42"') +
     (st.errors.length ? '<div class="err" role="alert">' + st.errors.map(esc).join('<br>') + '</div>' : '') +
     '<button class="btn wide" data-act="save">' + (id ? 'Speichern' : 'Gericht anlegen') + '</button>';
   openSheet({
@@ -97,7 +98,7 @@ function openForm(src, id) {
 
 // ---------- Import ----------
 function openImport() {
-  const st = { text: '', checked: null, error: '' };
+  const st = { text: '', checked: null, error: '', source: '' };
   const check = () => {
     const p = parseImport(st.text);
     st.error = p.error || '';
@@ -105,7 +106,7 @@ function openImport() {
   };
   const render = () => {
     let h = '<div class="card"><p>Lass dir Rezepte von einem KI-Assistenten ins passende Format bringen:</p><ol class="steps">' +
-      '<li>Prompt kopieren und bei ChatGPT, Claude oder einem anderen Assistenten einfügen.</li><li>Dein Rezept darunter setzen – Text, Link-Inhalt oder ein Foto der Seite.</li><li>Die Antwort hier einfügen und prüfen.</li></ol>' +
+      '<li>Prompt kopieren und bei ChatGPT, Claude oder einem anderen Assistenten einfügen.</li><li>Dein Rezept darunter setzen – Text, Link-Inhalt oder ein Foto der Seite. Gib den Link mit, dann kommt er als Quelle ins Gericht und du findest Bilder und Details auf der Originalseite wieder.</li><li>Die Antwort hier einfügen und prüfen.</li></ol>' +
       '<div class="actions"><button class="linkbtn" data-act="prompt">' + ico.copy + 'Prompt kopieren</button></div>' +
       '<span class="note">Format: <b>' + FORMAT + '</b>. Einzelnes Gericht, Liste oder {"dishes": [...]} – alles geht.</span></div>' +
       '<div class="field"><label for="i-text">JSON einfügen</label><textarea id="i-text" class="mono" data-input="text" spellcheck="false" autocapitalize="off" placeholder=\'{"format": "' + FORMAT + '", "name": "…"}\'>' + esc(st.text) + '</textarea></div>' +
@@ -114,8 +115,11 @@ function openImport() {
     if (st.checked) {
       const ok = st.checked.filter(c => c.dish).length;
       h += '<div class="card"><span class="eyebrow">Prüfung</span><div class="rows">' + st.checked.map(c => '<div class="row"><span class="grow"><span class="nm">' + esc((c.dish || c.raw || {}).name || 'Ohne Namen') + '</span>' +
-        (c.dish ? '<span class="why">' + SLOT_LABEL[c.dish.slot] + ' · ' + nf(c.dish.protein) + ' g Protein · ' + nf(c.dish.kcal) + ' kcal · ' + c.dish.ingredients.length + ' Zutaten</span>'
+        (c.dish ? '<span class="why">' + SLOT_LABEL[c.dish.slot] + ' · ' + nf(c.dish.protein) + ' g Protein · ' + nf(c.dish.kcal) + ' kcal · ' + c.dish.ingredients.length + ' Zutaten' + (c.dish.source ? ' · Quelle: ' + esc(sourceLabel(c.dish.source)) : '') + '</span>'
           : '<span class="err">' + c.errors.map(esc).join(' ') + '</span>') + '</span>' + (c.dish ? '<span class="pill">passt</span>' : '') + '</div>').join('') + '</div></div>';
+      // Gerichte ohne Quelle: Link hier nachtragen (gilt für alle ohne eigene Quelle)
+      const missing = st.checked.filter(c => c.dish && !c.dish.source).length;
+      if (ok && ok === st.checked.length && missing) h += '<div class="field"><label for="i-source">Quelle' + (missing < ok ? ' für die ' + missing + ' ohne' : '') + ' (optional)</label><input id="i-source" data-input="source" inputmode="url" autocapitalize="off" spellcheck="false" value="' + esc(st.source) + '" placeholder="Link zur Rezeptseite"><span class="note">Damit du Bilder und Details später auf der Originalseite findest.</span></div>';
       if (ok && ok === st.checked.length) h += '<button class="btn wide" data-act="doImport">' + ok + (ok === 1 ? ' Gericht' : ' Gerichte') + ' importieren</button>';
       else if (st.checked.length) h += '<p class="note">Bitte die markierten Fehler im JSON beheben (oder den Assistenten darum bitten) und noch einmal prüfen.</p><button class="btn wide" data-act="check">Noch einmal prüfen</button>';
       return h;
@@ -124,13 +128,15 @@ function openImport() {
   };
   openSheet({
     title: 'Gerichte importieren', render,
-    onInput: el => { st.text = el.value; if (st.checked) { st.checked = null; } },
+    onInput: el => { if (el.dataset.input === 'source') { st.source = el.value; return; } st.text = el.value; if (st.checked) { st.checked = null; } },
     onChange: async el => { const file = el.files && el.files[0]; if (!file) return; st.text = (await file.text()).slice(0, 900000); check(); drawSheet(); },
     actions: {
       prompt: () => copyText(LLM_PROMPT, 'Prompt kopiert'),
       check: () => { check(); drawSheet(); },
       doImport: async () => {
-        const r = await post('/api/dishes/import', { items: st.checked.map(c => c.raw) });
+        const src = st.source.trim();
+        const items = st.checked.map(c => (src && !c.dish.source ? { ...c.raw, source: src } : c.raw));
+        const r = await post('/api/dishes/import', { items });
         if (r.failed.length) { st.error = 'Der Server hat ' + r.failed.length + ' Gerichte abgelehnt: ' + r.failed.map(f => f.errors.join(' ')).join(' '); drawSheet(); return; }
         await loadDishes(); closeSheet(); filter = 'mine'; toast(r.created.length + (r.created.length === 1 ? ' Gericht' : ' Gerichte') + ' importiert'); S.render();
       }

@@ -1,4 +1,5 @@
 // Gemeinsame Basis für alle Ansichten: Zustand, Server-Aufrufe, Datum, Formatierung, Symbole, Blatt und Hinweis.
+import { sourceHref, sourceLabel } from '/shared/dish.js';
 
 export const S = {
   me: null,          // { user, household, unread, vapidKey }
@@ -109,6 +110,7 @@ export const ico = {
   trash: svg('<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>'),
   flame: svg('<path d="M12 3c1 4 5 5.5 5 10a5 5 0 01-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z"/>'),
   bell: svg('<path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 004 0"/>'),
+  ext: svg('<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/>'),
   copy: svg('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/>'),
   gear: svg('<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>', 1.9),
   hand: svg('<path d="M8 13V5.5a1.5 1.5 0 013 0V11m0-5.5V4a1.5 1.5 0 013 0v7m0-5a1.5 1.5 0 013 0v8a6 6 0 01-6 6h-1a6 6 0 01-5-3l-2.5-4.5a1.5 1.5 0 012.5-1.5L8 13"/>', 1.8),
@@ -157,4 +159,11 @@ export function drawSheet() {
     '<div class="sheet-head"><h2>' + esc(sheet.title) + '</h2><button class="iconbtn" data-act="closeSheet" aria-label="Schließen">' + ico.close + '</button></div>' + sheet.render() + '</div>';
   el.hidden = false;
   el.querySelector('.sheet').scrollTop = top;
+}
+
+// Verweis auf die Herkunft eines importierten Gerichts: Link zur Originalseite (Bilder usw.) oder Hinweistext
+export function sourceHtml(source) {
+  const href = sourceHref(source);
+  if (href) return '<div class="actions"><a class="linkbtn" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + ico.ext + 'Original ansehen · ' + esc(sourceLabel(source)) + '</a></div>';
+  return source ? '<div class="note">Quelle: ' + esc(source) + '</div>' : '';
 }

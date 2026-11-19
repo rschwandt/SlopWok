@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
-import { validateDish, parseImport, exportDish, LLM_PROMPT } from '../shared/dish.js';
+import { validateDish, parseImport, exportDish, LLM_PROMPT, sourceHref, sourceLabel } from '../shared/dish.js';
 import { encrypt, decrypt } from '../server/push.js';
 import { tripRange, settle } from '../server/logic.js';
 
@@ -26,6 +26,18 @@ test('validateDish meldet Fehler verständlich', () => {
   const { dish, errors } = validateDish({ name: 'X', slot: 'brunch', ingredients: [{ name: 'Tofu' }] });
   assert.equal(dish, null);
   assert.equal(errors.length, 5);
+});
+
+test('Quelle: Link zur Originalseite oder Text, nur http(s) wird klickbar', () => {
+  const base = { name: 'Testgericht', protein: 10, kcal: 100 };
+  assert.equal(validateDish({ ...base, url: 'https://www.chefkoch.de/rezepte/123' }).dish.source, 'https://www.chefkoch.de/rezepte/123');
+  assert.equal(validateDish({ ...base, quelle: 'www.example.org/x' }).dish.source, 'https://www.example.org/x');
+  assert.equal(validateDish({ ...base, source: 'Kochbuch, S. 42' }).dish.source, 'Kochbuch, S. 42');
+  assert.equal(validateDish(base).dish.source, undefined);
+  assert.equal(sourceLabel('https://www.chefkoch.de/rezepte/123'), 'chefkoch.de');
+  assert.equal(sourceHref('Kochbuch, S. 42'), null);
+  assert.equal(sourceHref('javascript:alert(1)'), null);
+  assert.equal(exportDish(validateDish({ ...base, link: 'https://a.example/r' }).dish).source, 'https://a.example/r');
 });
 
 test('Push-Verschlüsselung lässt sich vom Empfänger entschlüsseln', () => {

@@ -46,7 +46,8 @@ Mehrere Gerichte auf einmal: eine Liste `[ {...}, {...} ]` oder `{"format": "slo
 | `ingredients` | nein | Was frisch gekauft wird, siehe unten. Mengen **pro Portion**. |
 | `basics` | nein | Gewürze, Öl, Soßen – nur Namen. Erscheinen beim Einkauf unter „Vorrat prüfen". |
 | `steps` | nein | Zubereitungsschritte |
-| `tip`, `source` | nein | Hinweis und Quelle |
+| `tip` | nein | Hinweis |
+| `source` | nein | Herkunft: am besten die URL der Rezeptseite (in der App ein Link „Original ansehen“ für Bilder und Details), sonst Text wie „Kochbuch, S. 42“. Auch als `url`, `link` oder `quelle` |
 
 ### Zutat
 

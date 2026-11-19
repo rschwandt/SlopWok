@@ -17,7 +17,8 @@ einen veganen High-Protein-Monatsplan; dessen 41 Gerichte sind als Startbiblioth
 - **Fortschritt:** Protein- und Kalorienziel pro Tag, Wochenübersicht, Serie. Sichtbar für niemanden, den Haushalt oder
   alle – jede Person entscheidet selbst. Wer sichtbar ist, kann angestupst werden (In-App und per Push).
 - **Gerichte:** Von Hand anlegen oder als JSON importieren, das ein KI-Assistent ausfüllt:
-  [docs/gerichte-format.md](docs/gerichte-format.md).
+  [docs/gerichte-format.md](docs/gerichte-format.md). Importierte Gerichte verlinken auf ihre Originalseite, wenn die Quelle
+  bekannt ist (für Bilder und Details).
 
 ## Starten
 

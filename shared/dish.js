@@ -81,11 +81,22 @@ export function validateDish(input) {
     name, slot, minutes: Math.round(minutes), protein: Math.round(protein * 10) / 10, kcal: Math.round(kcal),
     tags: list(input.tags, 12, 40), ingredients, basics: list(input.basics, 40, 60), steps: list(input.steps, 40, 1000)
   };
-  const tip = str(input.tip, 500), source = str(input.source, 300);
+  const tip = str(input.tip, 500);
+  // Quelle: Link zur Originalseite (für Bilder usw.) oder ein Hinweis wie „Kochbuch X, S. 42"
+  let source = str(input.source ?? input.url ?? input.link ?? input.quelle ?? input.sourceUrl, 500);
+  if (/^www\./i.test(source)) source = 'https://' + source;
   if (tip) dish.tip = tip;
   if (source) dish.source = source;
   return { dish, errors };
 }
+
+// Klickbarer Link zur Quelle – nur http(s), alles andere bleibt reiner Text.
+export function sourceHref(source) {
+  if (!source) return null;
+  try { const u = new URL(source); return u.protocol === 'https:' || u.protocol === 'http:' ? u.href : null; } catch { return null; }
+}
+// Kurzform für die Anzeige: bei Links die Domain, sonst der Text selbst.
+export const sourceLabel = source => { const h = sourceHref(source); return h ? new URL(h).hostname.replace(/^www\./, '') : source; };
 
 // Nimmt beliebigen eingefügten Text (auch mit ```json … ``` drumherum) und liefert die enthaltenen Gerichte-Rohdaten.
 export function parseImport(text) {
@@ -122,6 +133,7 @@ Regeln:
 - "basics": Gewürze, Öl, Soßen und Vorräte, die man meist zu Hause hat – nur Namen, ohne Menge.
 - "steps": kurze Zubereitungsschritte auf Deutsch, Mengen dort pro Portion.
 - Schätze Protein und Kalorien aus den Zutaten, wenn das Rezept sie nicht nennt.
+- "source": die vollständige URL der Seite, von der das Rezept stammt (dort gibt es Bilder und Details). Ohne Webseite Buch o. Ä. als Text; weglassen, wenn unbekannt.
 - Mehrere Rezepte: {"format": "${FORMAT}", "dishes": [ ... ]}.
 
 Beispiel:

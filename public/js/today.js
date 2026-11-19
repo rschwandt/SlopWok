@@ -1,6 +1,6 @@
 // Ansicht „Heute": Tagesziel, Mahlzeiten abhaken, Mahlzeiten planen (das warme Gericht gemeinsam) und Extras eintragen.
 import { S, get, post, patch, del, esc, ico, nf, pills, head, chip, avatar, settingsBtn, members, memberName, solo, toast, fmtCount, fmtNice, portions, shortName,
-  todayISO, addDays, wdOf, WDL, WD, dateLabel, openSheet, closeSheet, drawSheet } from './core.js';
+  todayISO, addDays, wdOf, WDL, WD, dateLabel, openSheet, closeSheet, drawSheet, sourceHtml } from './core.js';
 import { SLOTS, SLOT_LABEL } from '/shared/dish.js';
 import { woki } from './woki.js';
 
@@ -42,7 +42,7 @@ function mealCard(m) {
       if (d.basics.length) body += '<div class="basics"><b>Aus dem Vorrat:</b> ' + esc(d.basics.join(', ')) + '</div>';
     }
     if (isOpen) body += (d.steps.length ? '<ol class="steps">' + d.steps.map(s => '<li>' + esc(s) + '</li>').join('') + '</ol>' : '<div class="note">Für dieses Gericht sind keine Schritte hinterlegt.</div>') +
-      (d.tip ? '<div class="note">' + esc(d.tip) + '</div>' : '');
+      (d.tip ? '<div class="note">' + esc(d.tip) + '</div>' : '') + sourceHtml(d.source);
   }
   let actions = '';
   if (d && !m.leftoverOf) actions += '<button class="linkbtn" data-act="recipe" data-id="' + m.id + '" aria-expanded="' + isOpen + '">' + ico.book + (isOpen ? 'Zubereitung ausblenden' : 'Zubereitung') + '</button>';
