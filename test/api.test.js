@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import http from 'node:http';
 import { createServer } from '../server/index.js';
 import { openDb } from '../server/db.js';
 import { decrypt } from '../server/push.js';
@@ -249,9 +250,11 @@ test('Monatsplan anwenden und Haushalt wechseln', async () => {
 test('Statische Dateien und Pfadschutz', async () => {
   assert.equal((await fetch(base + '/')).status, 200);
   assert.match(await (await fetch(base + '/shared/dish.js')).text(), /slopwok\.dish\/v1/);
-  assert.notEqual((await fetch(base + '/shared/../server/api.js')).headers.get('content-type'), 'text/javascript; charset=utf-8x');
-  const leak = await (await fetch(base + '/%2e%2e/server/api.js')).text();
-  assert.ok(!leak.includes('createApi'));
+  // Kodierte Schrägstriche dürfen nicht aus public/ bzw. shared/ herausführen (Datenbank, secrets.env, .git, Quelltext)
+  for (const p of ['/shared/..%2fserver%2fapi.js', '/shared/..%2f..%2fSlopWok%2fserver%2fapi.js', '/shared/%2e%2e%2fpackage.json', '/..%2fserver%2fapi.js', '/%2e%2e/server/api.js', '/js/..%2f..%2fpackage.json']) {
+    const text = await new Promise((ok, no) => http.get(base + p, r => { let b = ''; r.on('data', d => (b += d)); r.on('end', () => ok(r.statusCode + ' ' + b)); }).on('error', no));
+    assert.ok(!/createApi|"name": "slopwok"/i.test(text), p + ' → ' + text.slice(0, 60));
+  }
 });
 
 test('Beitritt mit eigenem Vorschlagsplan: ein gemeinsames warmes Gericht pro Tag', async () => {

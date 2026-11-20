@@ -102,8 +102,13 @@ export function createServer(opts = {}) {
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }
     let p;
     try { p = decodeURIComponent(url.pathname); } catch { res.writeHead(400); return res.end(); }
-    const base = p.startsWith('/shared/') ? root : path.join(root, 'public');
-    const file = path.normalize(path.join(base, p === '/' ? 'index.html' : p));
+    // Ausgeliefert wird nur aus public/ und shared/. Der Pfad wird erst nach dem Dekodieren zusammengesetzt und
+    // dann geprüft – sonst käme „/shared/..%2fdata%2f…" aus dem Ordner heraus (Datenbank, secrets.env, .git).
+    const shared = p.startsWith('/shared/');
+    const base = path.join(root, shared ? 'shared' : 'public');
+    const rel = shared ? p.slice('/shared'.length) : p === '/' ? '/index.html' : p;
+    if (rel.includes('\0')) { res.writeHead(400); return res.end(); }
+    const file = path.normalize(path.join(base, rel));
     if (!file.startsWith(base + path.sep)) { res.writeHead(403); return res.end(); }
     serveFile(res, path.extname(file) ? file : path.join(root, 'public', 'index.html'), req.method);
   });
