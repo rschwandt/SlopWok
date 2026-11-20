@@ -311,3 +311,17 @@ test('Vorschlagsmodus füllt freie Mahlzeiten, tauscht und respektiert Entfernte
   meals = (await dora.get(`/api/meals?from=${L.addDays(today, 3)}&to=${L.addDays(today, 3)}`)).meals;
   assert.deepEqual(meals.map(m => m.slot), ['dinner']);
 });
+
+test('Login-Bremse hinter dem Proxy lässt sich nicht mit eigenem X-Forwarded-For umgehen', async () => {
+  const s = createServer({ db: openDb(':memory:'), loginLimit: 3, trustProxy: true });
+  await new Promise(r => s.listen(0, '127.0.0.1', r));
+  const url = 'http://127.0.0.1:' + s.address().port + '/api/login';
+  const codes = [];
+  for (let i = 0; i < 5; i++) {
+    // Der Angreifer setzt vorne beliebige Adressen, der Proxy hängt die echte (203.0.113.9) hinten an
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': '10.0.0.' + i + ', 203.0.113.9' }, body: JSON.stringify({ name: 'x', password: 'falsch123' }) });
+    codes.push(r.status);
+  }
+  s.close();
+  assert.deepEqual(codes, [401, 401, 401, 429, 429]);
+});

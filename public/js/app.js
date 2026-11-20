@@ -6,7 +6,7 @@ import plan from './plan.js';
 import shop from './shop.js';
 import dishes from './dishes.js';
 import people from './people.js';
-import settings from './settings.js';
+import settings, { syncPush } from './settings.js';
 import { openGoalSheet, openModeSheet } from './goals.js';
 
 const VIEWS = { today, plan, shop, dishes, people, settings };
@@ -69,7 +69,7 @@ async function enter(me, fresh) {
   if (pendingJoin && pendingJoin !== me.household.invite) askJoin(pendingJoin);
   else if (fresh) openGoalSheet({ intro: 'Willkommen! Damit die App weiß, wie viel du am Tag brauchst, rechnen wir kurz deine Ziele aus.', onDone: openModeSheet });
   pendingJoin = '';
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').then(syncPush).catch(() => {});
 }
 function askJoin(code) {
   openSheet({

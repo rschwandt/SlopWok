@@ -23,7 +23,29 @@ async function enablePush() {
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(S.me.vapidKey) });
   await post('/api/push/subscribe', sub.toJSON());
+  rememberKey(S.me.vapidKey);
   push.state = 'on';
+}
+// Mit welchem Server-Schlüssel das Abo dieses Geräts angelegt wurde (nicht jeder Browser verrät es selbst)
+const rememberKey = k => { try { localStorage.setItem('pushKey', k); } catch {} };
+const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+// Beim Start: Hat der Server einen neuen Push-Schlüssel (z. B. nach einem Schlüsseltausch), wird das alte Abo
+// gekündigt und ein neues angelegt. Sonst wird das Abo nur erneut gemeldet, falls der Server es verworfen hat.
+export async function syncPush() {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || Notification.permission !== 'granted') return;
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return;
+    const own = sub.options && sub.options.applicationServerKey;
+    let stored = null; try { stored = localStorage.getItem('pushKey'); } catch {}
+    const used = own ? b64u(own) : stored;
+    if (used === S.me.vapidKey) { await post('/api/push/subscribe', sub.toJSON()); rememberKey(used); return; }
+    await sub.unsubscribe();
+    const fresh = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(S.me.vapidKey) });
+    await post('/api/push/subscribe', fresh.toJSON());
+    rememberKey(S.me.vapidKey);
+  } catch {}
 }
 async function disablePush() {
   const reg = await navigator.serviceWorker.ready;

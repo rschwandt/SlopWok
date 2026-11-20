@@ -68,7 +68,8 @@ export function createServer(opts = {}) {
         body = await readBody(req);
       }
       if (/^\/api\/(login|register)$/.test(url.pathname)) {
-        const ip = (trustProxy && String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()) || req.socket.remoteAddress;
+        // Der Proxy hängt die echte Adresse hinten an; alles davor kann der Aufrufer selbst mitschicken.
+        const ip = (trustProxy && String(req.headers['x-forwarded-for'] || '').split(',').pop().trim()) || req.socket.remoteAddress;
         if (limited(ip)) throw new HttpError(429, 'Zu viele Versuche. Bitte warte ein paar Minuten.');
       }
       const token = (req.headers.cookie || '').split(/;\s*/).map(c => c.split('=')).find(c => c[0] === COOKIE)?.[1] || '';

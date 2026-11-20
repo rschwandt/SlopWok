@@ -707,7 +707,7 @@ export function createApi(db, cfg = {}) {
       const st = serverToday(), claimed = query.today || c.body.today;
       c.today = L.isIso(claimed) && Math.abs(L.diffDays(st, claimed)) <= 1 ? claimed : st;
       if (!r.open) {
-        const s = token && db.get('SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ?', sha(token));
+        const s = token && db.get('SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ? AND s.created > ?', sha(token), Date.now() - 365 * 864e5);
         if (!s) bad('Bitte melde dich an.', 401);
         c.user = s;
         c.hh = db.get('SELECT * FROM households WHERE id = ?', s.household_id);
