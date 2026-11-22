@@ -41,12 +41,13 @@ export function loadMeals(db, where, params) {
   const ids = [...byId.keys()];
   const marks = ids.map(() => '?').join(',');
   for (const e of db.all(`SELECT * FROM meal_eaters WHERE meal_id IN (${marks})`, ...ids))
-    byId.get(e.meal_id).eaters.push({ userId: e.user_id, portions: e.portions, eaten: !!e.eaten });
+    byId.get(e.meal_id).eaters.push({ userId: e.user_id, portions: e.portions, eaten: !!e.eaten, actual: e.actual ? JSON.parse(e.actual) : null });
   // Reste, die aus diesen Mahlzeiten später gegessen werden, zählen zur Kochmenge der Quelle
   for (const r of db.all(`SELECT m.leftover_of AS src, SUM(e.portions) AS p FROM meals m JOIN meal_eaters e ON e.meal_id = m.id
                           WHERE m.leftover_of IN (${marks}) GROUP BY m.leftover_of`, ...ids))
     byId.get(r.src).leftoverPortions = r.p || 0;
-  for (const m of meals) m.cook = m.leftoverOf ? 0 : m.eaters.reduce((a, e) => a + e.portions, 0) + m.leftoverPortions;
+  // Wer stattdessen etwas anderes gegessen und seine Portion an den Rest für morgen gegeben hat, zählt nur dort
+  for (const m of meals) m.cook = m.leftoverOf ? 0 : m.eaters.reduce((a, e) => a + e.portions - (e.actual?.kept || 0), 0) + m.leftoverPortions;
   return meals;
 }
 export const mealsInRange = (db, hhId, from, to) => loadMeals(db, 'm.household_id = ? AND m.date BETWEEN ? AND ?', [hhId, from, to]);
@@ -158,11 +159,13 @@ export function progress(db, user, from, to) {
   const s = userSettings(user);
   const days = {};
   for (let d = from; d <= to; d = addDays(d, 1)) days[d] = { date: d, planP: 0, planK: 0, eatP: 0, eatK: 0, meals: 0, eaten: 0 };
-  const rows = db.all(`SELECT m.date, m.custom, d.data, e.portions, e.eaten FROM meal_eaters e JOIN meals m ON m.id = e.meal_id
+  const rows = db.all(`SELECT m.date, m.custom, d.data, e.portions, e.eaten, e.actual FROM meal_eaters e JOIN meals m ON m.id = e.meal_id
                        LEFT JOIN dishes d ON d.id = m.dish_id WHERE e.user_id = ? AND m.date BETWEEN ? AND ?`, user.id, from, to);
   for (const r of rows) {
-    const src = r.data ? JSON.parse(r.data) : r.custom ? JSON.parse(r.custom) : { protein: 0, kcal: 0 };
-    const day = days[r.date], p = src.protein * r.portions, k = src.kcal * r.portions;
+    // Stattdessen gegessen: die Schätzung gilt für die ganze Mahlzeit, unabhängig von den geplanten Portionen
+    const act = r.actual ? JSON.parse(r.actual) : null;
+    const src = act ? act : r.data ? JSON.parse(r.data) : r.custom ? JSON.parse(r.custom) : { protein: 0, kcal: 0 };
+    const mult = act ? 1 : r.portions, day = days[r.date], p = src.protein * mult, k = src.kcal * mult;
     day.planP += p; day.planK += k; day.meals++;
     if (r.eaten) { day.eatP += p; day.eatK += k; day.eaten++; }
   }

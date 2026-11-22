@@ -343,12 +343,15 @@ export function createApi(db, cfg = {}) {
   }
   const hhMeal = (c, id) => db.get('SELECT * FROM meals WHERE id = ? AND household_id = ?', int(id), c.hh.id) || bad('Mahlzeit nicht gefunden.', 404);
   function setEaters(mealId, eaters) {
-    const old = new Map(db.all('SELECT user_id, eaten FROM meal_eaters WHERE meal_id = ?', mealId).map(r => [r.user_id, r.eaten]));
+    const old = new Map(db.all('SELECT user_id, eaten, actual FROM meal_eaters WHERE meal_id = ?', mealId).map(r => [r.user_id, r]));
     db.run('DELETE FROM meal_eaters WHERE meal_id = ?', mealId);
-    for (const e of eaters) db.run('INSERT INTO meal_eaters (meal_id, user_id, portions, eaten) VALUES (?, ?, ?, ?)', mealId, e.userId, e.portions, old.get(e.userId) || 0);
+    for (const e of eaters) db.run('INSERT INTO meal_eaters (meal_id, user_id, portions, eaten, actual) VALUES (?, ?, ?, ?, ?)', mealId, e.userId, e.portions, old.get(e.userId)?.eaten || 0, old.get(e.userId)?.actual || null);
   }
   function setLeftover(c, meal, eaters) {
     db.run('DELETE FROM meals WHERE leftover_of = ?', meal.id);
+    // Der Rest wird neu verteilt: weitergegebene Portionen von „anders gegessen“ stecken nicht mehr darin
+    for (const e of db.all("SELECT user_id, actual FROM meal_eaters WHERE meal_id = ? AND actual LIKE '%\"kept\"%'", meal.id))
+      db.run('UPDATE meal_eaters SET actual = ? WHERE meal_id = ? AND user_id = ?', JSON.stringify({ ...JSON.parse(e.actual), kept: 0 }), meal.id, e.user_id);
     if (!eaters.length) return;
     const id = db.insert('INSERT INTO meals (household_id, date, slot, dish_id, leftover_of, created_by, created) VALUES (?, ?, ?, ?, ?, ?, ?)',
       c.hh.id, L.addDays(meal.date, 1), 'lunch', meal.dish_id, meal.id, c.user.id, Date.now());
@@ -360,7 +363,8 @@ export function createApi(db, cfg = {}) {
     const shows = new Set([c.user.id, ...c.members.filter(u => canSee(c.user, u)).map(u => u.id)]);
     return meals
       .filter(m => isShared({ slot: m.slot, leftover_of: m.leftoverOf }) || m.eaters.some(e => e.userId === c.user.id))
-      .map(m => ({ ...m, eaters: m.eaters.map(e => (shows.has(e.userId) ? e : { ...e, eaten: false })) }));
+      // Was jemand stattdessen gegessen hat, sieht nur diese Person
+      .map(m => ({ ...m, eaters: m.eaters.map(e => ({ ...e, eaten: shows.has(e.userId) && e.eaten, actual: e.userId === c.user.id ? e.actual : null })) }));
   }
   const oneMeal = (c, id) => forViewer(c, L.loadMeals(db, 'm.id = ?', [id]))[0] || null;
   // Eigene Mahlzeit einer anderen Person? Dann darf man sie weder ändern noch löschen.
@@ -393,6 +397,8 @@ export function createApi(db, cfg = {}) {
       const mid = db.insert('INSERT INTO meals (household_id, date, slot, dish_id, custom, cook_id, created_by, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         c.hh.id, d, slot, dishId, custom, cookId, c.user.id, Date.now());
       setEaters(mid, eaters);
+      // Nachgetragen: gleich als gegessen abhaken (nur für sich selbst)
+      if (b.eaten) db.run('UPDATE meal_eaters SET eaten = 1 WHERE meal_id = ? AND user_id = ?', mid, c.user.id);
       setLeftover(c, { id: mid, date: d, dish_id: dishId }, left);
       return mid;
     });
@@ -478,8 +484,59 @@ export function createApi(db, cfg = {}) {
   });
   route('POST', '/api/meals/:id/eaten', c => {
     const m = hhMeal(c, c.params.id);
-    const r = db.run('UPDATE meal_eaters SET eaten = ? WHERE meal_id = ? AND user_id = ?', c.body.eaten ? 1 : 0, m.id, c.user.id);
+    const r = db.tx(() => {
+      if (!c.body.eaten) clearActual(m, c.user.id); // nicht gegessen: auch nichts anderes stattdessen
+      return db.run('UPDATE meal_eaters SET eaten = ? WHERE meal_id = ? AND user_id = ?', c.body.eaten ? 1 : 0, m.id, c.user.id);
+    });
     if (!r.changes) bad('Du isst bei dieser Mahlzeit nicht mit.');
+    return { meal: oneMeal(c, m.id) };
+  });
+
+  // ---------- Anders gegessen ----------
+  // Statt der geplanten Mahlzeit etwas anderes gegessen, Nährwerte geschätzt. Das gilt nur für die eigene Person:
+  // Plan, Kochmenge (außer bei weitergegebener Portion), Einkauf und Kasse der anderen bleiben, wie sie sind.
+  function clearActual(m, userId) {
+    const e = db.get('SELECT actual FROM meal_eaters WHERE meal_id = ? AND user_id = ?', m.id, userId);
+    const kept = e?.actual ? JSON.parse(e.actual).kept || 0 : 0;
+    if (kept) {
+      // Die weitergegebene Portion wieder aus dem Rest nehmen, solange der noch nicht gegessen ist
+      const k = db.get('SELECT e.meal_id, e.portions FROM meal_eaters e JOIN meals k ON k.id = e.meal_id WHERE k.leftover_of = ? AND e.user_id = ? AND e.eaten = 0', m.id, userId);
+      if (k && k.portions - kept >= 0.25) db.run('UPDATE meal_eaters SET portions = ? WHERE meal_id = ? AND user_id = ?', k.portions - kept, k.meal_id, userId);
+      else if (k) {
+        db.run('DELETE FROM meal_eaters WHERE meal_id = ? AND user_id = ?', k.meal_id, userId);
+        db.run('DELETE FROM meals WHERE id = ? AND id NOT IN (SELECT meal_id FROM meal_eaters)', k.meal_id);
+      }
+    }
+    db.run('UPDATE meal_eaters SET actual = NULL WHERE meal_id = ? AND user_id = ?', m.id, userId);
+  }
+  route('PUT', '/api/meals/:id/actual', c => {
+    const m = hhMeal(c, c.params.id), b = c.body;
+    const me = db.get('SELECT portions FROM meal_eaters WHERE meal_id = ? AND user_id = ?', m.id, c.user.id) || bad('Du isst bei dieser Mahlzeit nicht mit.');
+    if (m.custom) bad('Das ist schon ein freier Eintrag. Ändere ihn direkt.');
+    const p = Number(b.protein), k = Number(b.kcal);
+    if (!(p >= 0 && p <= 500 && k >= 0 && k <= 10000)) bad('Werte unplausibel.');
+    // Die eigene Portion des warmen Gerichts bleibt übrig und wird morgen Mittag gegessen
+    const keep = !!b.keep && m.slot === 'dinner' && !m.leftover_of && !!m.dish_id;
+    db.tx(() => {
+      clearActual(m, c.user.id);
+      let kept = 0;
+      if (keep) {
+        let kid = db.get('SELECT id FROM meals WHERE leftover_of = ? ORDER BY id LIMIT 1', m.id)?.id;
+        if (!kid) kid = db.insert('INSERT INTO meals (household_id, date, slot, dish_id, leftover_of, created_by, created) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          c.hh.id, L.addDays(m.date, 1), 'lunch', m.dish_id, m.id, c.user.id, Date.now());
+        const had = db.get('SELECT portions FROM meal_eaters WHERE meal_id = ? AND user_id = ?', kid, c.user.id);
+        kept = Math.min(me.portions, 10 - (had?.portions || 0));
+        if (had) db.run('UPDATE meal_eaters SET portions = ? WHERE meal_id = ? AND user_id = ?', had.portions + kept, kid, c.user.id);
+        else db.run('INSERT INTO meal_eaters (meal_id, user_id, portions) VALUES (?, ?, ?)', kid, c.user.id, kept);
+      }
+      const actual = { name: text(b.name, 80, 1), protein: Math.round(p), kcal: Math.round(k), kept };
+      db.run('UPDATE meal_eaters SET actual = ?, eaten = 1 WHERE meal_id = ? AND user_id = ?', JSON.stringify(actual), m.id, c.user.id);
+    });
+    return { meal: oneMeal(c, m.id) };
+  });
+  route('DELETE', '/api/meals/:id/actual', c => {
+    const m = hhMeal(c, c.params.id);
+    db.tx(() => { clearActual(m, c.user.id); db.run('UPDATE meal_eaters SET eaten = 0 WHERE meal_id = ? AND user_id = ?', m.id, c.user.id); });
     return { meal: oneMeal(c, m.id) };
   });
 

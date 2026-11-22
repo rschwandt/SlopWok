@@ -173,7 +173,7 @@ button.row { background: none; border-left: 0; border-right: 0; border-top: 0; t
 /* Formulare */
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .field > label, .field > .lbl { font-weight: 600; font-size: 0.92rem; }
-.input, .field input:not([type="checkbox"]):not([type="file"]), .field select, .field textarea {
+.input, .field input:not([type="checkbox"]):not([type="file"]):not([type="range"]), .field select, .field textarea {
   padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); width: 100%; min-height: 46px; font-size: 16px;
 }
 .field textarea { min-height: 110px; resize: vertical; line-height: 1.4; }
@@ -306,3 +306,9 @@ label.pick.busy { color: var(--muted); cursor: default; }
   .woki-card.nudge .woki { animation: wobble 1.6s ease-in-out 2; transform-origin: 50% 80%; }
   @keyframes wobble { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-6deg); } 75% { transform: rotate(6deg); } }
 }
+
+/* Anders gegessen: Größenregler und Hinweis an der Mahlzeit */
+.range { width: 100%; margin: 10px 0 2px; accent-color: var(--primary); min-height: 32px; }
+.range-ticks { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); }
+.note.alt { display: flex; gap: 8px; align-items: flex-start; }
+.note.alt svg { flex: none; width: 18px; height: 18px; margin-top: 1px; color: var(--primary-ink); }

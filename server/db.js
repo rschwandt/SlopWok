@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS meal_eaters (
   meal_id INTEGER NOT NULL REFERENCES meals(id) ON DELETE CASCADE,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   portions REAL NOT NULL DEFAULT 1, eaten INTEGER NOT NULL DEFAULT 0,
+  -- actual: stattdessen gegessen, geschätzt. JSON {name, protein, kcal, kept}; kept = an den Rest für morgen gegebene Portionen
+  actual TEXT,
   PRIMARY KEY (meal_id, user_id)
 );
 CREATE INDEX IF NOT EXISTS eaters_user ON meal_eaters(user_id);
@@ -116,6 +118,7 @@ export function openDb(file) {
   if (!hasCol('meals', 'auto')) db.exec('ALTER TABLE meals ADD COLUMN auto INTEGER NOT NULL DEFAULT 0');
   // swiped: aus einem Match entstanden. pinned: von Hand geändert, das Swipen fasst es nicht mehr an.
   for (const col of ['swiped', 'pinned']) if (!hasCol('meals', col)) db.exec(`ALTER TABLE meals ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`);
+  if (!hasCol('meal_eaters', 'actual')) db.exec('ALTER TABLE meal_eaters ADD COLUMN actual TEXT');
 
   const cache = new Map();
   const stmt = sql => { let s = cache.get(sql); if (!s) cache.set(sql, (s = db.prepare(sql))); return s; };

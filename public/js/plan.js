@@ -1,5 +1,5 @@
 // Ansicht „Plan": Wochenübersicht des Haushalts und der mitgelieferte Monatsplan.
-import { S, get, post, esc, ico, nf, head, chip, settingsBtn, members, memberName, solo, toast, shortName,
+import { S, get, post, mealP, esc, ico, nf, head, chip, settingsBtn, members, memberName, solo, toast, shortName,
   todayISO, addDays, wdOf, WD, dateLabel, mondayOf, nextWeek, openSheet, closeSheet, drawSheet } from './core.js';
 import { SLOT_LABEL } from '/shared/dish.js';
 
@@ -33,7 +33,7 @@ function render() {
     const rest = day.filter(m => m.slot !== 'dinner' && m.slot !== 'extra' && m.eaters.some(e => e.userId === myId()));
     rest.sort((x, y) => ORDER.indexOf(x.slot) - ORDER.indexOf(y.slot));
     let p = 0;
-    for (const m of day) { const e = m.eaters.find(x => x.userId === myId()); if (e) p += m.protein * e.portions; }
+    for (const m of day) { const e = m.eaters.find(x => x.userId === myId()); if (e) p += mealP(m, e); }
     const main = dinner.length ? dinner.map(m => esc(m.name)).join(' · ')
       : '<span class="muted">' + (without.length ? 'Ohne dich: ' + without.map(m => esc(shortName(m.name))).join(' · ') : 'Kein warmes Gericht geplant') + '</span>';
     const bits = [];

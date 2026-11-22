@@ -1,0 +1,43 @@
+// Richtwerte für „Anders gegessen“, alle vegan wie die Gerichte der App: typische Portionen auswärts oder vom Imbiss, eher großzügig angesetzt,
+// weil Essen außer Haus fast immer unterschätzt wird. Werte pro normaler Portion: [Name, Gruppe, Protein g, kcal].
+export const ESTIMATES = [
+  ['Döner (Seitan oder Soja)', 'Imbiss', 40, 750],
+  ['Falafel-Dürüm oder -Wrap', 'Imbiss', 22, 750],
+  ['Falafel-Teller mit Hummus', 'Imbiss', 25, 900],
+  ['Currywurst mit Pommes', 'Imbiss', 25, 950],
+  ['Hotdog', 'Imbiss', 18, 450],
+  ['Pommes', 'Imbiss', 6, 450],
+  ['Burger mit Pommes', 'Imbiss', 32, 1100],
+  ['Burrito mit Bohnen', 'Imbiss', 28, 900],
+  ['Pizza, ganz (Gemüse, ohne Käse)', 'Restaurant', 30, 950],
+  ['Pizza, ganz (mit Käseersatz)', 'Restaurant', 30, 1100],
+  ['Pasta mit Tomatensoße', 'Restaurant', 22, 750],
+  ['Pasta mit Cashew- oder Hafersahnesoße', 'Restaurant', 25, 1000],
+  ['Lasagne', 'Restaurant', 28, 800],
+  ['Curry mit Tofu und Reis', 'Restaurant', 28, 850],
+  ['Curry mit Gemüse oder Kichererbsen und Reis', 'Restaurant', 22, 800],
+  ['Dal mit Reis', 'Restaurant', 24, 750],
+  ['Gebratene Nudeln oder Reis mit Tofu', 'Restaurant', 25, 850],
+  ['Ramen', 'Restaurant', 25, 700],
+  ['Sushi (12 Stück)', 'Restaurant', 12, 550],
+  ['Bowl mit Tofu oder Tempeh', 'Restaurant', 28, 700],
+  ['Chili sin Carne mit Reis', 'Restaurant', 30, 800],
+  ['Schnitzel mit Pommes', 'Restaurant', 35, 1100],
+  ['Salat mit Tofu oder Kichererbsen', 'Restaurant', 20, 450],
+  ['Salat mit Dressing und Brot', 'Restaurant', 14, 600],
+  ['Mensa- oder Kantinenessen', 'Kantine', 22, 750],
+  ['Belegtes Brötchen', 'Bäcker', 14, 400],
+  ['Pizzastück oder Bäckerpizza', 'Bäcker', 12, 400],
+  ['Laugenbrezel', 'Bäcker', 8, 250],
+  ['Süßes Teilchen', 'Bäcker', 5, 350],
+  ['Stück Kuchen', 'Bäcker', 5, 400],
+  ['Eis (2 Kugeln)', 'Süßes', 3, 250],
+  ['Schokoriegel', 'Süßes', 3, 250],
+  ['Hafer-Latte', 'Getränke', 4, 150],
+  ['Bier (0,5 l)', 'Getränke', 3, 210],
+  ['Glas Wein (0,2 l)', 'Getränke', 0, 160],
+  ['Cola oder Limo (0,5 l)', 'Getränke', 0, 210]
+].map(([name, group, protein, kcal]) => ({ name, group, protein, kcal }));
+
+// Portionsgröße auf dem Regler: Faktor und Wort dazu
+export const SIZES = [[0.5, 'halbe Portion'], [0.75, 'klein'], [1, 'normal'], [1.25, 'groß'], [1.5, 'sehr groß'], [2, 'doppelt']];

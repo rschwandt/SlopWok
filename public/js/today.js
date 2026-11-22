@@ -1,8 +1,9 @@
 // Ansicht „Heute": Tagesziel, Mahlzeiten abhaken, Mahlzeiten planen (das warme Gericht gemeinsam) und Extras eintragen.
-import { S, get, post, patch, del, esc, ico, nf, pills, head, chip, avatar, settingsBtn, members, memberName, solo, toast, fmtCount, fmtNice, portions, shortName,
+import { S, get, post, patch, del, mealP, mealK, esc, ico, nf, pills, head, chip, avatar, settingsBtn, members, memberName, solo, toast, fmtCount, fmtNice, portions, shortName,
   todayISO, addDays, nextWeek, wdOf, WDL, WD, dateLabel, openSheet, closeSheet, drawSheet, sourceHtml } from './core.js';
 import { SLOTS, SLOT_LABEL } from '/shared/dish.js';
 import { woki } from './woki.js';
+import { openEstimateSheet } from './estimate.js';
 import { hasPhoto, thumbHtml, bannerHtml, addPhotoHtml, changePhoto, removePhoto, resetPhotoConfirm } from './photo.js';
 
 let meals = [], loaded = '';
@@ -29,13 +30,15 @@ function whoLine(m) {
   return '<div class="who">' + m.eaters.map(e => avatar(members().find(x => x.id === e.userId) || {}, 'sm')).join('') + '<span>' + parts.join(' · ') + '</span></div>';
 }
 function mealCard(m) {
-  const me = mine(m), done = me.eaten, d = m.dish, isOpen = !!open[m.id];
+  const me = mine(m), done = me.eaten, d = m.dish, isOpen = !!open[m.id], alt = me.actual;
   let body = whoLine(m);
+  if (alt) body += '<div class="note alt">' + ico.plate + '<span>Statt <b>' + esc(m.name) + '</b> gegessen, geschätzt.' + (alt.kept ? ' Deine Portion steht morgen als Rest im Plan.' : '') + '</span></div>';
   if (m.leftoverOf) body += '<div class="note">' + portions(me.portions) + ' vom Vortag aufwärmen. Nichts einzukaufen.</div>';
   else if (d) {
     if (m.slot === 'dinner' || isOpen) {
       if (m.cook !== 1) {
-        const bits = m.eaters.map(e => (e.userId === myId() ? 'du' : esc(memberName(e.userId))) + ' ' + fmtCount(e.portions));
+        // Eine an den Rest weitergegebene Portion zählt dort, nicht heute Abend
+        const bits = m.eaters.filter(e => e.portions - (e.actual?.kept || 0) > 0).map(e => (e.userId === myId() ? 'du' : esc(memberName(e.userId))) + ' ' + fmtCount(e.portions - (e.actual?.kept || 0)));
         if (m.leftoverPortions) bits.push('Rest für morgen ' + fmtCount(m.leftoverPortions));
         body += '<div class="note"><b>Kochmenge ' + fmtCount(m.cook) + '× Rezept</b> (' + bits.join(', ') + '). Die Mengen unten sind schon hochgerechnet.</div>';
       }
@@ -51,12 +54,13 @@ function mealCard(m) {
   if (d && !m.leftoverOf) actions += '<button class="linkbtn" data-act="recipe" data-id="' + m.id + '" aria-expanded="' + isOpen + '">' + ico.book + (isOpen ? 'Zubereitung ausblenden' : 'Zubereitung') + '</button>';
   if (m.auto && d && !m.leftoverOf) actions += '<button class="linkbtn" data-act="swapMeal" data-id="' + m.id + '">' + ico.swap + 'Tauschen</button>';
   if (d && !m.leftoverOf && isOpen) actions += addPhotoHtml(d);
+  if (!m.custom && m.date <= todayISO()) actions += '<button class="linkbtn" data-act="otherMeal" data-id="' + m.id + '">' + ico.plate + (alt ? 'Schätzung ändern' : 'Anders gegessen') + '</button>';
   actions += '<button class="linkbtn" data-act="editMeal" data-id="' + m.id + '">' + ico.edit + 'Ändern</button>';
-  return '<article class="meal' + (m.slot === 'dinner' ? ' dinner' : '') + (done ? ' done' : '') + '">' +
+  return '<article class="meal' + (m.slot === 'dinner' ? ' dinner' : '') + (done ? ' done' : '') + (alt ? ' alt' : '') + '">' +
     (showBanner ? bannerHtml(d, { edit: true }) : '') +
     '<div class="meal-top"><button class="check" role="checkbox" aria-checked="' + done + '" aria-label="' + esc(m.name) + ' gegessen" data-act="eat" data-id="' + m.id + '">' + ico.tick + '</button>' +
-    '<div><span class="eyebrow">' + SLOT_LABEL[m.slot] + (m.leftoverOf ? '' : m.swiped && !m.pinned ? (m.eaters.length > 1 ? ' · Match' : ' · Geswipet') : m.auto ? ' · Vorschlag' : '') + '</span><h3>' + (m.leftoverOf ? 'Rest: ' : '') + esc(m.name) + '</h3>' +
-    pills(m.protein * me.portions, m.kcal * me.portions, m.slot === 'dinner' && d && !m.leftoverOf ? d.minutes : 0) + '</div>' +
+    '<div><span class="eyebrow">' + SLOT_LABEL[m.slot] + (m.leftoverOf ? '' : m.swiped && !m.pinned ? (m.eaters.length > 1 ? ' · Match' : ' · Geswipet') : m.auto ? ' · Vorschlag' : '') + '</span><h3>' + (alt ? esc(alt.name) : (m.leftoverOf ? 'Rest: ' : '') + esc(m.name)) + '</h3>' +
+    pills(mealP(m, me), mealK(m, me), m.slot === 'dinner' && d && !m.leftoverOf && !alt ? d.minutes : 0) + '</div>' +
     (showBanner ? '' : thumbHtml(d)) + '</div>' +
     body + '<div class="actions">' + actions + '</div></article>';
 }
@@ -69,7 +73,7 @@ function render() {
   // Gemeinsam gibt es nur das warme Gericht – die übrigen Mahlzeiten der anderen gehen dich nichts an
   const my = day.filter(mine), other = day.filter(m => !mine(m) && m.slot === 'dinner');
   let planP = 0, planK = 0, eatP = 0, eatK = 0;
-  for (const m of my) { const e = mine(m), p = m.protein * e.portions, k = m.kcal * e.portions; planP += p; planK += k; if (e.eaten) { eatP += p; eatK += k; } }
+  for (const m of my) { const e = mine(m), p = mealP(m, e), k = mealK(m, e); planP += p; planK += k; if (e.eaten) { eatP += p; eatK += k; } }
   let h = '<div class="brand">' + woki('happy') + '<span>SlopWok</span></div>' + head(isToday ? 'Heute' : addDays(todayISO(), 1) === date ? 'Morgen' : addDays(todayISO(), -1) === date ? 'Gestern' : 'Tag', WDL[wdOf(date)] + ',<br>' + dateLabel(date),
     '<button class="iconbtn" data-act="day" data-d="-1" aria-label="Vorheriger Tag">' + ico.prev + '</button>' +
     chip('Heute', isToday, 'data-act="day" data-d="0"') +
@@ -237,22 +241,10 @@ export async function openMealSheet({ date, slot, meal, dishId, matched = new Se
   });
 }
 
+// Extra oder ungeplante Mahlzeit nachtragen: als Extra oder unter einer Mahlzeit, für die an dem Tag noch nichts geplant ist
 function openExtraSheet() {
-  const quick = S.dishes.filter(d => d.tags.includes('Extra'));
-  openSheet({
-    title: 'Extra eintragen',
-    render: () => (quick.length ? '<div class="card"><span class="eyebrow">Schnell</span><div class="rows">' + quick.map(d => '<button class="row" data-act="quick" data-id="' + d.id + '"><span class="grow"><span class="nm">' + esc(d.name) + '</span></span><span class="pill">+' + nf(d.protein) + ' g</span><span class="pill k">+' + nf(d.kcal) + '</span></button>').join('') + '</div></div>' : '') +
-      '<form class="card" data-form="extra"><div class="field"><label for="x-name">Was war es?</label><input id="x-name" name="name" required maxlength="80" placeholder="z. B. Proteinriegel"></div>' +
-      '<div class="row2"><div class="field"><label for="x-p">Protein (g)</label><input id="x-p" name="protein" type="number" inputmode="decimal" min="0" max="500" step="any" required></div>' +
-      '<div class="field"><label for="x-k">Kalorien</label><input id="x-k" name="kcal" type="number" inputmode="numeric" min="0" max="10000" required></div></div>' +
-      '<button class="btn wide">Eintragen</button></form>',
-    actions: {
-      quick: async el => { await post('/api/meals', { date: S.date, slot: 'extra', dishId: +el.dataset.id, eaters: [{ userId: myId(), portions: 1 }] }); closeSheet(); await S.refresh(); }
-    },
-    submit: {
-      extra: async data => { await post('/api/meals', { date: S.date, slot: 'extra', custom: data, eaters: [{ userId: myId(), portions: 1 }] }); closeSheet(); await S.refresh(); }
-    }
-  });
+  const taken = new Set(meals.filter(m => m.date === S.date && mine(m)).map(m => m.slot));
+  openEstimateSheet({ date: S.date, slots: ['extra', ...SLOTS.filter(s => !taken.has(s))], quick: S.dishes.filter(d => d.tags.includes('Extra')), done: () => S.refresh() });
 }
 
 const actions = {
@@ -280,7 +272,8 @@ const actions = {
     const r = await patch('/api/meals/' + m.id, { eaters: [...m.eaters, { userId: myId(), portions: S.me.user.settings.portion || 1 }] });
     put(r.meal); toast('Du isst mit');
   },
-  addExtra: () => openExtraSheet()
+  addExtra: () => openExtraSheet(),
+  otherMeal: el => openEstimateSheet({ meal: find(el.dataset.id), done: async meal => { put(meal); await S.refresh(); } })
 };
 
 const onChange = el => { if (el.dataset.change === 'photo') return changePhoto(el, () => S.render(), () => S.refresh()); };

@@ -52,6 +52,10 @@ export const get = p => api('GET', p);
 export const post = (p, b) => api('POST', p, b);
 export const patch = (p, b) => api('PATCH', p, b);
 export const del = p => api('DELETE', p);
+export const put = (p, b) => api('PUT', p, b);
+// Nährwerte einer Mahlzeit für eine Person: geschätzt, wenn sie stattdessen etwas anderes gegessen hat
+export const mealP = (m, e) => (e.actual ? e.actual.protein : m.protein * e.portions);
+export const mealK = (m, e) => (e.actual ? e.actual.kcal : m.kcal * e.portions);
 
 export async function loadDishes() {
   const r = await get('/api/dishes');
@@ -109,6 +113,7 @@ export const ico = {
   cards: svg('<rect x="8" y="4" width="11" height="16" rx="2"/><path d="M8 6.5L4 8l3.5 10.5"/>'),
   undo: svg('<path d="M9 5L4 10l5 5"/><path d="M4 10h10a5 5 0 010 10h-3"/>'),
   swap: svg('<path d="M4 8h13l-3-3M20 16H7l3 3"/>'),
+  plate: svg('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/>'),
   edit: svg('<path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13 7l4 4"/>'),
   info: svg('<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>'),
   trash: svg('<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>'),

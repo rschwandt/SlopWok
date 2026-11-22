@@ -370,6 +370,52 @@ test('Eigene Mahlzeiten und „gegessen“ der anderen bleiben privat', async ()
   assert.equal(eatenOf((await two.patch(`/api/meals/${din.id}`, { cookId: T.user.id })).meal), false);
 });
 
+test('Anders gegessen: Schätzung zählt nur für die eigene Person, Portion kann an den Rest gehen', async () => {
+  const { one, two, O, T, breakfast, main, eat } = await twoInHousehold('rosa', 'sven');
+  const prog = async (c, u) => (await c.get('/api/progress/' + u.user.id + '?days=7')).days.at(-1);
+  const din = (await one.post('/api/meals', { date: today, slot: 'dinner', dishId: main, eaters: [eat(O), eat(T)] })).meal;
+  const cookBefore = din.cook;
+  // Werte werden geprüft, nur Mitesser dürfen schätzen
+  assert.equal((await one.put(`/api/meals/${din.id}/actual`, { name: 'Döner', protein: -1, kcal: 700 })).status, 400);
+  const own = (await one.post('/api/meals', { date: today, slot: 'breakfast', dishId: breakfast, eaters: [eat(O)] })).meal;
+  assert.equal((await two.put(`/api/meals/${own.id}/actual`, { name: 'x', protein: 1, kcal: 1 })).status, 400);
+
+  let r = (await one.put(`/api/meals/${din.id}/actual`, { name: 'Döner', protein: 40, kcal: 750, keep: true })).meal;
+  const mine = r.eaters.find(e => e.userId === O.user.id);
+  assert.equal(mine.eaten, true);
+  assert.deepEqual(mine.actual, { name: 'Döner', protein: 40, kcal: 750, kept: 1 });
+  assert.equal(r.cook, cookBefore); // die Portion wandert in den Rest, gekocht wird gleich viel
+  let p = await prog(one, O);
+  assert.equal(p.eatP, 40); assert.equal(p.eatK, 750);
+  // Die andere Person sieht den Plan unverändert und nicht, was stattdessen gegessen wurde
+  const seen = (await two.get(`/api/meals?from=${today}&to=${today}`)).meals.find(m => m.id === din.id);
+  assert.equal(seen.name, din.name);
+  assert.equal(seen.eaters.find(e => e.userId === O.user.id).actual, null);
+  const next = L.addDays(today, 1);
+  let rest = (await one.get(`/api/meals?from=${next}&to=${next}`)).meals.find(m => m.leftoverOf === din.id);
+  assert.deepEqual(rest.eaters.map(e => [e.userId, e.portions]), [[O.user.id, 1]]);
+
+  // Ändern behält die Schätzung, neu schätzen ohne Rest nimmt die Portion wieder zurück
+  await two.patch(`/api/meals/${din.id}`, { cookId: T.user.id });
+  r = (await one.put(`/api/meals/${din.id}/actual`, { name: 'Pizza', protein: 30, kcal: 1100 })).meal;
+  assert.equal(r.eaters.find(e => e.userId === O.user.id).actual.name, 'Pizza');
+  assert.equal(r.cook, cookBefore);
+  rest = (await one.get(`/api/meals?from=${next}&to=${next}`)).meals.find(m => m.leftoverOf === din.id);
+  assert.equal(rest, undefined);
+
+  // Abhaken zurücknehmen löscht die Schätzung
+  r = (await one.post(`/api/meals/${din.id}/eaten`, { eaten: false })).meal;
+  assert.equal(r.eaters.find(e => e.userId === O.user.id).actual, null);
+  p = await prog(one, O);
+  assert.equal(p.eatP, 0);
+
+  // Nachgetragen als Mahlzeit, gleich abgehakt
+  const lunch = (await one.post('/api/meals', { date: today, slot: 'lunch', custom: { name: 'Bowl', protein: 28, kcal: 700 }, eaters: [eat(O)], eaten: true })).meal;
+  assert.equal(lunch.eaters[0].eaten, true);
+  assert.equal((await prog(one, O)).eatP, 28);
+  assert.equal((await one.put(`/api/meals/${lunch.id}/actual`, { name: 'x', protein: 1, kcal: 1 })).status, 400);
+});
+
 // Kein dekodierbares Bild, aber ein korrekt aufgebautes JPEG: mehr prüft der Server nicht
 function jpeg({ w = 64, h = 48, extra = [], scans = 1, scan = [0x11, 0xff, 0x00, 0xff, 0xd0, 0x22], tail = '' } = {}) {
   const seg = (m, body) => Buffer.concat([Buffer.from([0xff, m, (body.length + 2) >> 8, (body.length + 2) & 255]), Buffer.from(body)]);

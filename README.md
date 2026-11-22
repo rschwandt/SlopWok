@@ -19,6 +19,11 @@ einen veganen High-Protein-Monatsplan; dessen 41 Gerichte sind als Startbiblioth
   (außer man wohnt allein). Gemochtes, das nicht gekocht wird, kommt in der nächsten Runde nach vorne. Wer kein Match hat,
   bekommt wie gewohnt einen Vorschlag. Selbst Geplantes und schon Eingekauftes bleibt stehen. Ab Montag steht die Woche
   fest und die Runde für die nächste beginnt.
+- **Anders gegessen:** Wer nicht nach Plan gegessen hat, schätzt statt Zutaten zu suchen: eine vegane Vorlage
+  (Döner, Pizza, Curry, Mensa …), eines der eigenen Gerichte oder „wie geplant“, dazu ein Regler für die Größe. Die
+  Zahlen lassen sich danach noch ändern. Das gilt nur für die eigene Person, der Plan der anderen bleibt. Die eigene
+  Portion vom warmen Gericht kann als Rest am nächsten Mittag stehen. Über „Extra eintragen“ geht dasselbe für
+  Ungeplantes, wahlweise als Extra oder als noch freie Mahlzeit. Richtwerte: `shared/estimates.js`.
 - **Fortschritt:** Protein- und Kalorienziel pro Tag, Wochenübersicht, Serie. Sichtbar für niemanden, den Haushalt oder
   alle – jede Person entscheidet selbst. Wer sichtbar ist, kann angestupst werden (In-App und per Push).
 - **Gerichte:** Von Hand anlegen oder als JSON importieren, das ein KI-Assistent ausfüllt:
@@ -75,7 +80,9 @@ server/db.js       SQLite-Schema, spielt server/seed.json ein
 server/photo.js    Fotos prüfen und von Metadaten befreien (JPEG, ohne Fremdbibliothek)
 server/push.js     Web Push (VAPID + aes128gcm) ohne Fremdbibliothek
 shared/dish.js     Gerichteformat: Prüfung, Import, LLM-Prompt (läuft in Browser und Server)
+shared/estimates.js Richtwerte für „Anders gegessen“
 public/            die Web-App (ES-Module, kein Framework)
+public/js/estimate.js Nährwerte schätzen (Anders gegessen, Extras)
 public/js/photo.js Fotos anzeigen, verkleinern, hochladen
 public/js/woki.js  Woki, das Maskottchen (SVG, drei Stimmungen); Quelle für die App-Icons
 tools/build-seed.mjs  erzeugt server/seed.json aus der ursprünglichen Einzelnutzer-App
