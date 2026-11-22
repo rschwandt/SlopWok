@@ -34,7 +34,8 @@ function normUnit(u, amount) {
   const low = raw.toLowerCase();
   if (low === 'kg') return ['g', amount * 1000];
   if (low === 'l' || low === 'liter') return ['ml', amount * 1000];
-  return [UNIT_ALIAS[low] || raw || 'Stk', amount];
+  if (Object.hasOwn(UNIT_ALIAS, low)) return [UNIT_ALIAS[low], amount];
+  return [raw.replace(/[<>&"'`]/g, '').trim() || 'Stk', amount];
 }
 
 // Gibt { dish, errors } zurück. errors ist eine Liste deutscher Klartext-Meldungen; bei Fehlern ist dish null.
@@ -45,7 +46,7 @@ export function validateDish(input) {
   if (name.length < 2) errors.push('„name" fehlt.');
 
   let slot = str(input.slot, 30).toLowerCase() || 'dinner';
-  slot = SLOT_ALIAS[slot] || slot;
+  if (Object.hasOwn(SLOT_ALIAS, slot)) slot = SLOT_ALIAS[slot];
   if (!SLOTS.includes(slot)) errors.push('„slot" muss breakfast, lunch, snack oder dinner sein.');
 
   const protein = num(input.protein), kcal = num(input.kcal);

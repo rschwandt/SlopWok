@@ -56,7 +56,7 @@ function renderList() {
       if (!rows.length) continue;
       h += '<div class="aisle"><h3>' + cname + '</h3>';
       for (const it of rows) {
-        const qty = it.packs ? it.packs + '×<small>' + esc(it.pack.label || fmtQ(it.pack.size, it.unit)) + '</small>' : fmtNice(it.need, it.unit);
+        const qty = it.packs ? it.packs + '×<small>' + (it.pack.label ? esc(it.pack.label) : fmtQ(it.pack.size, it.unit)) + '</small>' : fmtNice(it.need, it.unit);
         const why = (it.packs ? 'brauchst ' + fmtNice(it.need, it.unit) + ' · ' : '') + esc(it.why.slice(0, 3).join(', ')) + (it.why.length > 3 ? ' …' : '');
         h += buyRow('check', 'data-key="' + esc(it.key) + '"', it.got, it.name, why, qty);
       }

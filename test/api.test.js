@@ -238,12 +238,16 @@ test('Monatsplan anwenden und Haushalt wechseln', async () => {
   // Cleo zieht in Annas Haushalt, ihr Plan zieht mit
   const joined = await cleo.post('/api/household/join', { code: A.household.invite });
   assert.equal(joined.household.members.length, 3);
-  const meals = (await anna.get(`/api/meals?from=${start}&to=${L.addDays(start, 6)}`)).meals;
-  assert.equal(meals.filter(m => m.eaters.some(e => e.userId === C.user.id)).length, 27);
+  const week = `/api/meals?from=${start}&to=${L.addDays(start, 6)}`;
+  const withCleo = async who => (await who.get(week)).meals.filter(m => m.eaters.some(e => e.userId === C.user.id)).length;
+  assert.equal(await withCleo(cleo), 27);
+  assert.equal(await withCleo(anna), 13); // Anna sieht davon nur die warmen Gerichte und Reste
   // … und wieder aus: künftige Mahlzeiten nur mit ihr verschwinden aus dem Haushalt
   const leftHh = await cleo.post('/api/household/leave');
   assert.equal(leftHh.household.members.length, 1);
-  assert.equal((await anna.get(`/api/meals?from=${start}&to=${L.addDays(start, 6)}`)).meals.length, 0);
+  assert.equal((await anna.get(week)).meals.length, 0);
+  // auch die eigenen, die Anna ohnehin nicht sähe, sind aus dem Haushalt verschwunden
+  assert.equal(L.mealsInRange(server.db, A.household.id, start, L.addDays(start, 6)).length, 0);
   assert.equal((await anna.get('/api/me')).household.members.length, 2);
 });
 
@@ -264,13 +268,14 @@ test('Beitritt mit eigenem Vorschlagsplan: ein gemeinsames warmes Gericht pro Ta
   for (const c of [eva, finn]) { await c.patch('/api/me', { settings: { mode: 'auto' } }); await c.get(`/api/meals?from=${today}&to=${today}`); }
   await finn.post('/api/household/join', { code: E.household.invite });
   const meals = (await eva.get(`/api/meals?from=${today}&to=${L.addDays(today, 6)}`)).meals;
+  const his = (await finn.get(`/api/meals?from=${today}&to=${L.addDays(today, 6)}`)).meals;
   for (let i = 0; i < 7; i++) {
     const d = L.addDays(today, i), day = meals.filter(m => m.date === d);
     const dinners = day.filter(m => m.slot === 'dinner');
     assert.equal(dinners.length, 1, d);
     assert.deepEqual(dinners[0].eaters.map(e => e.userId).sort(), [E.user.id, F.user.id].sort());
     if (i) assert.equal(day.filter(m => m.slot === 'lunch' && m.leftoverOf).length, 1, d); // ein Rest, für beide
-    for (const slot of ['breakfast', 'snack']) assert.equal(day.filter(m => m.slot === slot).length, 2, d + slot);
+    for (const slot of ['breakfast', 'snack']) for (const view of [meals, his]) assert.equal(view.filter(m => m.date === d && m.slot === slot).length, 1, d + slot);
   }
 });
 
@@ -324,4 +329,41 @@ test('Login-Bremse hinter dem Proxy lässt sich nicht mit eigenem X-Forwarded-Fo
   }
   s.close();
   assert.deepEqual(codes, [401, 401, 401, 429, 429]);
+});
+
+async function twoInHousehold(n1, n2) {
+  const one = client(), two = client();
+  const O = await one.post('/api/register', { name: n1, password: 'geheim123' });
+  const T = await two.post('/api/register', { name: n2, password: 'geheim123', invite: O.household.invite });
+  const all = (await one.get('/api/dishes')).dishes;
+  const breakfast = all.find(x => x.slot === 'breakfast').id, main = all.find(x => x.slot === 'dinner').id;
+  const eat = (who, portions = 1) => ({ userId: who.user.id, portions });
+  return { one, two, O, T, breakfast, main, eat };
+}
+
+test('Plan leeren lässt die eigenen Mahlzeiten der anderen stehen', async () => {
+  const { one, two, O, T, breakfast, main, eat } = await twoInHousehold('gina', 'hugo');
+  const d = L.addDays(today, 3);
+  await one.post('/api/meals', { date: d, slot: 'breakfast', dishId: breakfast, eaters: [eat(O)] });
+  await two.post('/api/meals', { date: d, slot: 'breakfast', dishId: breakfast, eaters: [eat(T)] });
+  await one.post('/api/meals', { date: d, slot: 'dinner', dishId: main, eaters: [eat(O), eat(T)] });
+  assert.equal((await two.post('/api/plan/clear', { from: d })).deleted, 2);
+  assert.deepEqual((await one.get(`/api/meals?from=${d}&to=${d}`)).meals.map(m => m.slot), ['breakfast']);
+});
+
+test('Eigene Mahlzeiten und „gegessen“ der anderen bleiben privat', async () => {
+  const { one, two, O, T, breakfast, main, eat } = await twoInHousehold('ida', 'jona');
+  const own = (await one.post('/api/meals', { date: today, slot: 'breakfast', dishId: breakfast, eaters: [eat(O)] })).meal;
+  const din = (await one.post('/api/meals', { date: today, slot: 'dinner', dishId: main, eaters: [eat(O), eat(T)] })).meal;
+  for (const m of [own, din]) await one.post(`/api/meals/${m.id}/eaten`, { eaten: true });
+  const seen = async () => (await two.get(`/api/meals?from=${today}&to=${today}`)).meals;
+  const eatenOf = m => m.eaters.find(e => e.userId === O.user.id).eaten;
+  let view = await seen();
+  assert.deepEqual(view.map(m => m.id), [din.id]);
+  assert.equal(eatenOf(view[0]), true); // Standard: der Haushalt darf den Fortschritt sehen
+  await one.patch('/api/me', { settings: { share: 'none' } });
+  view = await seen();
+  assert.equal(eatenOf(view[0]), false);
+  assert.equal(eatenOf((await two.post(`/api/meals/${din.id}/eaten`, { eaten: true })).meal), false);
+  assert.equal(eatenOf((await two.patch(`/api/meals/${din.id}`, { cookId: T.user.id })).meal), false);
 });

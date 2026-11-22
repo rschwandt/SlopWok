@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 import { validateDish, parseImport, exportDish, LLM_PROMPT, sourceHref, sourceLabel } from '../shared/dish.js';
 import { encrypt, decrypt } from '../server/push.js';
 import { tripRange, settle } from '../server/logic.js';
@@ -38,6 +39,21 @@ test('Quelle: Link zur Originalseite oder Text, nur http(s) wird klickbar', () =
   assert.equal(sourceHref('Kochbuch, S. 42'), null);
   assert.equal(sourceHref('javascript:alert(1)'), null);
   assert.equal(exportDish(validateDish({ ...base, link: 'https://a.example/r' }).dish).source, 'https://a.example/r');
+});
+
+test('Einheiten können kein HTML einschleusen', async () => {
+  const unitOf = unit => validateDish({ name: 'Test', protein: 1, kcal: 1, ingredients: [{ name: 'X', amount: 1, unit }] }).dish.ingredients[0].unit;
+  assert.doesNotMatch(unitOf('<a href=//x.io>'), /[<>&"']/);
+  assert.equal(unitOf('constructor'), 'constructor');
+  assert.equal(unitOf('Becher'), 'Becher');
+  assert.equal(unitOf('esslöffel'), 'EL');
+  // Schon gespeicherte Einheiten entschärft die Anzeige selbst (core.js läuft sonst nur im Browser)
+  const src = fs.readFileSync(new URL('../public/js/core.js', import.meta.url), 'utf8')
+    .replace("'/shared/dish.js'", "'" + new URL('../shared/dish.js', import.meta.url).href + "'");
+  const core = await import('data:text/javascript,' + encodeURIComponent(src));
+  for (const unit of ['<s>hallo', '<plaintext>', 'constructor']) {
+    assert.doesNotMatch(core.fmtQ(2, unit) + core.fmtNice(2, unit), /<|native code|undefined/);
+  }
 });
 
 test('Push-Verschlüsselung lässt sich vom Empfänger entschlüsseln', () => {

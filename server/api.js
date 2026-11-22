@@ -300,7 +300,15 @@ export function createApi(db, cfg = {}) {
       c.hh.id, L.addDays(meal.date, 1), 'lunch', meal.dish_id, meal.id, c.user.id, Date.now());
     setEaters(id, eaters);
   }
-  const oneMeal = id => L.loadMeals(db, 'm.id = ?', [id])[0];
+  // Was jemand von den Mahlzeiten des Haushalts sehen darf: die eigenen und die gemeinsamen. Das „gegessen“ der
+  // anderen gehört zu deren Fortschritt und folgt deren Privatsphäre-Einstellung.
+  function forViewer(c, meals) {
+    const shows = new Set([c.user.id, ...c.members.filter(u => canSee(c.user, u)).map(u => u.id)]);
+    return meals
+      .filter(m => isShared({ slot: m.slot, leftover_of: m.leftoverOf }) || m.eaters.some(e => e.userId === c.user.id))
+      .map(m => ({ ...m, eaters: m.eaters.map(e => (shows.has(e.userId) ? e : { ...e, eaten: false })) }));
+  }
+  const oneMeal = (c, id) => forViewer(c, L.loadMeals(db, 'm.id = ?', [id]))[0] || null;
   // Eigene Mahlzeit einer anderen Person? Dann darf man sie weder ändern noch löschen.
   function ownOnly(c, m) {
     if (isShared(m)) return;
@@ -312,7 +320,7 @@ export function createApi(db, cfg = {}) {
     const from = date(c.query.from), to = date(c.query.to);
     if (L.diffDays(from, to) < 0 || L.diffDays(from, to) > 62) bad('Zeitraum zu groß.');
     auto.fill(c, to);
-    return { meals: L.mealsInRange(db, c.hh.id, from, to) };
+    return { meals: forViewer(c, L.mealsInRange(db, c.hh.id, from, to)) };
   });
   route('POST', '/api/meals', c => {
     const b = c.body, d = date(b.date);
@@ -334,7 +342,7 @@ export function createApi(db, cfg = {}) {
       setLeftover(c, { id: mid, date: d, dish_id: dishId }, left);
       return mid;
     });
-    return { meal: oneMeal(id) };
+    return { meal: oneMeal(c, id) };
   });
   route('PATCH', '/api/meals/:id', c => {
     const m = hhMeal(c, c.params.id), b = c.body;
@@ -368,7 +376,7 @@ export function createApi(db, cfg = {}) {
       }
       if ('leftover' in b && slot === 'dinner' && !m.leftover_of && !m.custom) setLeftover(c, m, b.leftover ? eatersIn(c, b.leftover, true) : []);
     });
-    return { meal: oneMeal(m.id) || null };
+    return { meal: oneMeal(c, m.id) };
   });
   route('DELETE', '/api/meals/:id', c => {
     const m = hhMeal(c, c.params.id);
@@ -391,7 +399,7 @@ export function createApi(db, cfg = {}) {
     const seen = Array.isArray(c.body.seen) ? c.body.seen.map(Number).slice(0, 30) : [];
     const next = auto.suggest(c, m.slot, m.date, [m.dish_id, ...seen]) || auto.suggest(c, m.slot, m.date, [m.dish_id]) || bad('Kein anderes passendes Gericht im Fundus.');
     db.run('UPDATE meals SET dish_id = ? WHERE id = ? OR leftover_of = ?', next, m.id, m.id);
-    return { meal: oneMeal(m.id) };
+    return { meal: oneMeal(c, m.id) };
   });
   route('GET', '/api/plan/suggestion', c => {
     const slot = SLOTS.includes(c.query.slot) ? c.query.slot : bad('Ungültige Mahlzeit.');
@@ -402,7 +410,7 @@ export function createApi(db, cfg = {}) {
     const m = hhMeal(c, c.params.id);
     const r = db.run('UPDATE meal_eaters SET eaten = ? WHERE meal_id = ? AND user_id = ?', c.body.eaten ? 1 : 0, m.id, c.user.id);
     if (!r.changes) bad('Du isst bei dieser Mahlzeit nicht mit.');
-    return { meal: oneMeal(m.id) };
+    return { meal: oneMeal(c, m.id) };
   });
 
   // Mitgelieferten Monatsplan ab einem Datum eintragen. Schon belegte Mahlzeiten bleiben unangetastet.
@@ -445,7 +453,9 @@ export function createApi(db, cfg = {}) {
   });
   route('POST', '/api/plan/clear', c => {
     const from = date(c.body.from);
-    const r = db.run(`DELETE FROM meals WHERE household_id = ? AND date >= ? AND id NOT IN (SELECT meal_id FROM meal_eaters WHERE eaten = 1)`, c.hh.id, from);
+    // Gemeinsames und Eigenes – Frühstück, Mittag, Snack und Extras der anderen bleiben stehen (wie bei DELETE)
+    const r = db.run(`DELETE FROM meals WHERE household_id = ? AND date >= ? AND id NOT IN (SELECT meal_id FROM meal_eaters WHERE eaten = 1)
+      AND (slot = 'dinner' OR leftover_of IS NOT NULL OR id IN (SELECT meal_id FROM meal_eaters WHERE user_id = ?))`, c.hh.id, from, c.user.id);
     return { deleted: Number(r.changes) };
   });
 

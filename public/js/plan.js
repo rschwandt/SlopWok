@@ -80,7 +80,8 @@ function openClearSheet() {
   const from = weekStart();
   openSheet({
     title: 'Plan leeren?',
-    render: () => '<p>Alle geplanten Mahlzeiten ab <b>' + WD[0] + ', ' + dateLabel(from) + '</b> werden für den ganzen Haushalt entfernt. Was schon als gegessen abgehakt ist, bleibt.</p>' +
+    render: () => '<p>Ab <b>' + WD[0] + ', ' + dateLabel(from) + '</b> werden ' + (solo() ? 'alle geplanten Mahlzeiten' : 'deine Mahlzeiten und die gemeinsamen warmen Gerichte samt Resten') + ' entfernt. Was schon als gegessen abgehakt ist, bleibt.' +
+      (solo() ? '' : ' Frühstück, Mittag und Snack der anderen bleiben stehen.') + '</p>' +
       '<div class="actions"><button class="linkbtn danger" data-act="yes">Ja, leeren</button><button class="linkbtn" data-act="closeSheet">Abbrechen</button></div>',
     actions: { yes: async () => { const r = await post('/api/plan/clear', { from }); closeSheet(); toast(r.deleted + ' Mahlzeiten entfernt'); await S.refresh(); } }
   });

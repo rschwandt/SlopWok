@@ -73,12 +73,13 @@ export function fmtCount(q) {
   const fs = FR[f] || FR[Object.keys(FR).reduce((a, b) => (Math.abs(b - f) < Math.abs(a - f) ? b : a))];
   return (w ? w : '') + fs;
 }
+// Liefert HTML: Die Einheit ist Nutzereingabe und wird hier escaped, Aufrufer setzen das Ergebnis direkt ein
 export function fmtQ(q, u) {
   if (u === 'g') return q >= 1000 ? nf(q / 1000, 2) + ' kg' : Math.round(q) + ' g';
   if (u === 'ml') return q >= 1000 ? nf(q / 1000, 2) + ' l' : Math.round(q) + ' ml';
   const many = q > 1.01;
-  const lab = { Zehe: many ? 'Zehen' : 'Zehe', Scheibe: many ? 'Scheiben' : 'Scheibe', Stange: many ? 'Stangen' : 'Stange', Dose: many ? 'Dosen' : 'Dose', Prise: many ? 'Prisen' : 'Prise' }[u] || u;
-  return fmtCount(q) + ' ' + lab;
+  const plural = { Zehe: 'Zehen', Scheibe: 'Scheiben', Stange: 'Stangen', Dose: 'Dosen', Prise: 'Prisen' };
+  return fmtCount(q) + ' ' + esc(many && Object.hasOwn(plural, u) ? plural[u] : u);
 }
 // Alltagstaugliche Mengen: Gramm auf 5, Stückzahlen auf halbe
 export function nice(q, u) {
