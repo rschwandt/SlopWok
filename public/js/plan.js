@@ -1,6 +1,6 @@
 // Ansicht „Plan": Wochenübersicht des Haushalts und der mitgelieferte Monatsplan.
 import { S, get, post, esc, ico, nf, head, chip, settingsBtn, members, memberName, solo, toast, shortName,
-  todayISO, addDays, wdOf, WD, dateLabel, mondayOf, openSheet, closeSheet, drawSheet } from './core.js';
+  todayISO, addDays, wdOf, WD, dateLabel, mondayOf, nextWeek, openSheet, closeSheet, drawSheet } from './core.js';
 import { SLOT_LABEL } from '/shared/dish.js';
 
 let meals = [], loadedFrom = '';
@@ -21,6 +21,9 @@ function render() {
     '<button class="iconbtn" data-act="week" data-d="-7" aria-label="Vorige Woche">' + ico.prev + '</button>' +
     chip('Diese', mondayOf(today) === from, 'data-act="week" data-d="0"') +
     '<button class="iconbtn" data-act="week" data-d="7" aria-label="Nächste Woche">' + ico.next + '</button>' + settingsBtn());
+  const next = nextWeek(today), swiped = S.me.swipeWeek === next;
+  h += '<button class="swipe-cta" data-act="nav" data-v="swipe">' + ico.cards + '<span><b>' + (swiped ? 'Weiter swipen' : 'Gerichte swipen') + '</b>' +
+    '<small>Warme Gerichte für ' + dateLabel(next) + ' – ' + dateLabel(addDays(next, 6)) + (solo() ? '' : '<br>Was ihr gemeinsam mögt, kocht ihr zusammen.') + '</small></span>' + ico.next + '</button>';
   h += '<section class="week">';
   for (let k = 0; k < 7; k++) {
     const d = addDays(from, k), day = list.filter(m => m.date === d);
@@ -40,6 +43,7 @@ function render() {
         bits.push(esc(who) + (m.cookId ? ' · ' + esc(memberName(m.cookId)) + (m.cookId === myId() ? ' kochst' : ' kocht') : ''));
       } else if (m.dish && m.dish.minutes) bits.push(m.dish.minutes + ' Min.');
     }
+    if (dinner.some(m => m.swiped && !m.pinned)) bits.push(solo() ? 'geswipet' : 'Match');
     if (rest.length) bits.push(rest.map(m => SLOT_LABEL[m.slot] + ': ' + (m.leftoverOf ? 'Rest' : esc(shortName(m.name)))).join(' · '));
     h += '<button class="dayrow' + (d === today ? ' today' : '') + '" data-act="nav" data-v="today" data-date="' + d + '"><span class="wd">' + WD[k] + '<small>' + dateLabel(d) + '</small></span>' +
       '<span class="dn">' + main + (bits.length ? '<small>' + bits.join(' · ') + '</small>' : '') + '</span><span class="pp">' + (p ? nf(p) + ' g' : '') + '</span></button>';

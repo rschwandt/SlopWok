@@ -6,6 +6,7 @@ import * as L from './logic.js';
 import { sendPush, generateVapidKeys } from './push.js';
 import { makeAuto } from './auto.js';
 import { LIMITS, readPhoto } from './photo.js';
+import { makeSwipe, nextWeek } from './swipe.js';
 
 const scrypt = promisify(crypto.scrypt);
 
@@ -92,6 +93,7 @@ export function createApi(db, cfg = {}) {
   const subject = cfg.vapidSubject || 'mailto:admin@example.com';
   const pushFetch = cfg.pushFetch || fetch;
   const auto = makeAuto(db);
+  const swipe = makeSwipe(db, auto);
 
   // Benachrichtigung speichern und (ohne darauf zu warten) als Push verschicken.
   function notify(userId, fromId, kind, msg, title) {
@@ -113,6 +115,7 @@ export function createApi(db, cfg = {}) {
     return {
       user: { ...publicUser(user), settings: L.userSettings(user) },
       household: { id: hh.id, name: hh.name, invite: hh.invite, settings: L.hhSettings(hh), members: membersOf(db, hh.id).map(m => ({ ...publicUser(m), portion: L.userSettings(m).portion })) },
+      swipeWeek: db.get('SELECT MAX(week) AS w FROM swipes WHERE user_id = ?', user.id).w, // zuletzt geswipete Woche
       unread: db.get('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read = 0', user.id).n,
       // jüngster ungelesener Anstupser der letzten 24 Stunden, für Woki auf „Heute"
       nudge: db.get("SELECT text, created FROM notifications WHERE user_id = ? AND kind = 'nudge' AND read = 0 AND created > ? ORDER BY id DESC LIMIT 1", user.id, Date.now() - 864e5) || null,
@@ -228,13 +231,20 @@ export function createApi(db, cfg = {}) {
   route('POST', '/api/household/join', c => {
     const target = db.get('SELECT * FROM households WHERE invite = ?', text(c.body.code, 16).toUpperCase()) || bad('Diesen Einladungscode gibt es nicht.', 404);
     if (target.id === c.hh.id) bad('Du bist schon in diesem Haushalt.');
-    db.tx(() => moveUser(db, c.user, target.id, c.today));
+    db.tx(() => {
+      moveUser(db, c.user, target.id, c.today);
+      for (const hhId of [c.hh.id, target.id]) swipe.replan(hhId, c.today, c.user.id);
+    });
     for (const m of membersOf(db, target.id)) if (m.id !== c.user.id) notify(m.id, c.user.id, 'household', c.user.display + ' ist eurem Haushalt beigetreten.');
     return mePayload(db.get('SELECT * FROM users WHERE id = ?', c.user.id));
   });
   route('POST', '/api/household/leave', c => {
     if (c.members.length < 2) bad('Du bist allein in diesem Haushalt.');
-    db.tx(() => moveUser(db, c.user, createHousehold(db, 'Haushalt von ' + c.user.display), c.today));
+    db.tx(() => {
+      const own = createHousehold(db, 'Haushalt von ' + c.user.display);
+      moveUser(db, c.user, own, c.today);
+      for (const hhId of [c.hh.id, own]) swipe.replan(hhId, c.today, c.user.id);
+    });
     return mePayload(db.get('SELECT * FROM users WHERE id = ?', c.user.id));
   });
 
@@ -276,7 +286,11 @@ export function createApi(db, cfg = {}) {
   route('DELETE', '/api/dishes/:id', c => {
     const row = visibleDish(c, int(c.params.id)) || bad('Gericht nicht gefunden.', 404);
     if (row.owner_id !== c.user.id) bad('Nur wer das Gericht angelegt hat, kann es löschen.', 403);
-    db.run('UPDATE dishes SET deleted = 1 WHERE id = ?', row.id); // geplante Mahlzeiten behalten ihr Gericht
+    db.tx(() => {
+      db.run('UPDATE dishes SET deleted = 1 WHERE id = ?', row.id); // geplante Mahlzeiten behalten ihr Gericht
+      // … außer den noch vorläufigen Matches der kommenden Woche
+      if (db.get('SELECT 1 FROM swipes WHERE dish_id = ? AND week = ?', row.id, nextWeek(c.today))) swipe.replan(c.hh.id, c.today, c.user.id);
+    });
     db.run('DELETE FROM dish_photos WHERE dish_id = ? AND household_id NOT IN (SELECT household_id FROM meals WHERE dish_id = ?)', row.id, row.id); // … und dessen Foto
     return { ok: true };
   });
@@ -394,7 +408,18 @@ export function createApi(db, cfg = {}) {
       soloEaters(c, after);
     }
     db.tx(() => {
+      let broke = false;
+      const before = { ...m }, had = db.all('SELECT user_id FROM meal_eaters WHERE meal_id = ?', m.id).map(r => r.user_id);
+      db.run('UPDATE meals SET pinned = 1 WHERE id = ? OR id = ?', m.id, m.leftover_of);
+      if (m.slot === 'dinner' && eaters) {
+        const now = eaters.map(e => e.userId), gone = had.filter(id => !now.includes(id));
+        // Wer aus einem Match aussteigt, bekommt an dem Tag weder das Gericht noch einen Vorschlag nachgeschoben
+        if (m.swiped) for (const id of gone) db.run("INSERT OR IGNORE INTO auto_skips (user_id, date, slot) VALUES (?, ?, 'dinner')", id, m.date);
+        swipe.spend(m, gone);
+        for (const id of now) if (!had.includes(id) && swipe.release(m, id)) broke = true;
+      }
       if (b.dishId != null && !m.custom) {
+        if (int(b.dishId) !== m.dish_id) swipe.spend(before, had);
         m.dish_id = (visibleDish(c, int(b.dishId)) || bad('Gericht nicht gefunden.', 404)).id;
         db.run('UPDATE meals SET dish_id = ? WHERE id = ? OR leftover_of = ?', m.dish_id, m.id, m.id);
       }
@@ -415,6 +440,7 @@ export function createApi(db, cfg = {}) {
         setEaters(m.id, eaters);
       }
       if ('leftover' in b && slot === 'dinner' && !m.leftover_of && !m.custom) setLeftover(c, m, b.leftover ? eatersIn(c, b.leftover, true) : []);
+      if (broke) swipe.replan(c.hh.id, c.today, c.user.id);
     });
     return { meal: oneMeal(c, m.id) };
   });
@@ -422,6 +448,7 @@ export function createApi(db, cfg = {}) {
     const m = hhMeal(c, c.params.id);
     ownOnly(c, m);
     db.tx(() => {
+      swipe.spend(m, db.all('SELECT user_id FROM meal_eaters WHERE meal_id = ?', m.id).map(r => r.user_id));
       // Im Vorschlagsmodus soll ein entfernter Vorschlag nicht sofort wiederkommen
       if (m.date >= c.today && MEAL_SLOTS.includes(m.slot))
         for (const e of db.all('SELECT user_id FROM meal_eaters WHERE meal_id = ?', m.id))
@@ -438,7 +465,10 @@ export function createApi(db, cfg = {}) {
     if (!m.dish_id || m.leftover_of || !SLOTS.includes(m.slot)) bad('Diese Mahlzeit lässt sich nicht tauschen.');
     const seen = Array.isArray(c.body.seen) ? c.body.seen.map(Number).slice(0, 30) : [];
     const next = auto.suggest(c, m.slot, m.date, [m.dish_id, ...seen]) || auto.suggest(c, m.slot, m.date, [m.dish_id]) || bad('Kein anderes passendes Gericht im Fundus.');
-    db.run('UPDATE meals SET dish_id = ? WHERE id = ? OR leftover_of = ?', next, m.id, m.id);
+    db.tx(() => {
+      swipe.spend(m, db.all('SELECT user_id FROM meal_eaters WHERE meal_id = ?', m.id).map(r => r.user_id));
+      db.run('UPDATE meals SET dish_id = ?, pinned = 1 WHERE id = ? OR leftover_of = ?', next, m.id, m.id);
+    });
     return { meal: oneMeal(c, m.id) };
   });
   route('GET', '/api/plan/suggestion', c => {
@@ -496,7 +526,32 @@ export function createApi(db, cfg = {}) {
     // Gemeinsames und Eigenes – Frühstück, Mittag, Snack und Extras der anderen bleiben stehen (wie bei DELETE)
     const r = db.run(`DELETE FROM meals WHERE household_id = ? AND date >= ? AND id NOT IN (SELECT meal_id FROM meal_eaters WHERE eaten = 1)
       AND (slot = 'dinner' OR leftover_of IS NOT NULL OR id IN (SELECT meal_id FROM meal_eaters WHERE user_id = ?))`, c.hh.id, from, c.user.id);
+    // Geleerte Matches kommen bei der nächsten Stimme nicht zurück
+    db.run('UPDATE swipes SET spent = 1 WHERE week >= ? AND user_id IN (SELECT id FROM users WHERE household_id = ?)', L.addDays(from, -6), c.hh.id);
     return { deleted: Number(r.changes) };
+  });
+
+  // ---------- Swipen: warme Gerichte für die kommende Woche ----------
+  function swipeOut(c) {
+    auto.fill(c, L.addDays(nextWeek(c.today), 6)); // zuerst füllen: die Reihenfolge der Karten hängt am Plan davor
+    const s = swipe.state(c.hh.id, c.user, c.today);
+    return { ...s, meals: forViewer(c, L.mealsInRange(db, c.hh.id, s.week, s.to)).filter(m => m.slot === 'dinner') };
+  }
+  route('GET', '/api/swipe', swipeOut);
+  route('POST', '/api/swipe', c => {
+    const week = date(c.body.week), { like } = c.body;
+    if (week !== nextWeek(c.today)) bad('Diese Runde ist vorbei. Geswipet wird immer für die kommende Woche.', 409);
+    if (like !== null && typeof like !== 'boolean') bad('Ungültige Stimme.');
+    const id = int(c.body.dishId);
+    if (!swipe.swipeable(c.hh.id).includes(id)) bad('Gericht nicht gefunden.', 404);
+    db.tx(() => {
+      if (like === null) db.run('DELETE FROM swipes WHERE user_id = ? AND week = ? AND dish_id = ?', c.user.id, week, id);
+      else db.run(`INSERT INTO swipes (user_id, week, dish_id, liked) VALUES (?, ?, ?, ?)
+                   ON CONFLICT (user_id, week, dish_id) DO UPDATE SET liked = excluded.liked, spent = 0`, c.user.id, week, id, like ? 1 : 0);
+      db.run('DELETE FROM swipes WHERE week < ?', L.addDays(c.today, -35));
+      swipe.replan(c.hh.id, c.today, c.user.id);
+    });
+    return swipeOut(c);
   });
 
   // ---------- Einkauf ----------

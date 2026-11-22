@@ -95,6 +95,14 @@ CREATE TABLE IF NOT EXISTS dish_photos (
   thumb BLOB NOT NULL, full BLOB NOT NULL,
   PRIMARY KEY (household_id, dish_id)
 );
+-- Swipen: eine Stimme je Person, Woche (deren Montag) und Gericht. Gehört zur Person, zieht also mit ihr um.
+-- spent: das Match wurde aus dem Plan genommen und soll nicht wiederkommen
+CREATE TABLE IF NOT EXISTS swipes (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, week TEXT NOT NULL,
+  dish_id INTEGER NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
+  liked INTEGER NOT NULL, spent INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, week, dish_id)
+);
 CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 `;
 
@@ -106,6 +114,8 @@ export function openDb(file) {
   // Nachträglich ergänzte Spalten für Datenbanken aus älteren Versionen
   const hasCol = (t, c) => db.prepare(`PRAGMA table_info(${t})`).all().some(r => r.name === c);
   if (!hasCol('meals', 'auto')) db.exec('ALTER TABLE meals ADD COLUMN auto INTEGER NOT NULL DEFAULT 0');
+  // swiped: aus einem Match entstanden. pinned: von Hand geändert, das Swipen fasst es nicht mehr an.
+  for (const col of ['swiped', 'pinned']) if (!hasCol('meals', col)) db.exec(`ALTER TABLE meals ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`);
 
   const cache = new Map();
   const stmt = sql => { let s = cache.get(sql); if (!s) cache.set(sql, (s = db.prepare(sql))); return s; };

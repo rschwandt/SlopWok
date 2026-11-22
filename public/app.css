@@ -223,7 +223,7 @@ textarea.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-siz
 .tab[aria-current="page"] { color: var(--primary-ink); }
 .tab[aria-current="page"] svg { background: var(--primary-soft); }
 .badge { position: absolute; top: 4px; left: calc(50% + 6px); font-size: 0.68rem; background: var(--danger); color: var(--surface); border-radius: 999px; padding: 0 6px; min-width: 18px; line-height: 18px; font-weight: 700; }
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); z-index: 60; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 0.92rem; max-width: min(90vw, 480px); text-align: center; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); z-index: 60; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 0.92rem; max-width: min(90vw, 480px); text-align: center; pointer-events: none; }
 .toast.bad { background: var(--danger); color: var(--surface); }
 
 /* Fotos zu Gerichten (Opt-in): Miniatur in Zeilen, Banner bündig oben in der Karte */
@@ -250,6 +250,39 @@ label.pick.busy { color: var(--muted); cursor: default; }
 .opt[aria-checked="true"] .switch { background: var(--primary); border-color: var(--primary-ink); }
 .opt[aria-checked="true"] .switch::after { left: 23px; background: var(--on-primary); }
 @media (prefers-reduced-motion: no-preference) { .switch::after { transition: left .15s ease; } }
+
+/* Swipen */
+.swipe-cta { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 1.5px solid var(--primary); border-radius: var(--r); background: var(--primary-soft); color: var(--ink); text-align: left; }
+.swipe-cta svg { width: 22px; height: 22px; flex-shrink: 0; color: var(--primary-ink); }
+.swipe-cta span { flex: 1; min-width: 0; }
+.swipe-cta small { display: block; }
+.swipe { display: flex; flex-direction: column; gap: 12px; }
+/* Beide Karten liegen in derselben Zelle. clip statt hidden, sonst wird die Seite beim Wegfliegen scrollbar */
+.deck { display: grid; grid-template-columns: minmax(0, 1fr); margin: 0 -16px; padding: 4px 16px 10px; overflow-x: clip; }
+.swipe-card { grid-area: 1 / 1; position: relative; min-height: min(310px, 44dvh); border: 4px double var(--primary); justify-content: space-between; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
+.swipe-card.back { transform: translateY(8px) scale(0.96); pointer-events: none; height: 0; min-height: 100%; overflow: hidden; }
+.swipe-card img { pointer-events: none; }
+.swipe-card > .photo { border-top-left-radius: calc(var(--r) - 4px); border-top-right-radius: calc(var(--r) - 4px); }
+.swipe-card > .photo img { max-height: 24dvh; }
+.swipe-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+.swipe-body h2 { font-size: 1.55rem; line-height: 1.2; overflow-wrap: anywhere; hyphens: auto; }
+.swipe-body .again { color: var(--primary-ink); }
+.swipe-ing { color: var(--muted); font-size: 0.93rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.stamp { position: absolute; top: 14px; z-index: 1; padding: 4px 12px; border: 3px solid; border-radius: 10px; background: var(--surface); font-family: var(--display); font-weight: 700; font-size: 1.3rem; pointer-events: none; }
+.stamp.yes { left: 14px; color: var(--primary-ink); transform: rotate(-8deg); opacity: var(--yes, 0); }
+.stamp.no { right: 14px; color: var(--accent-ink); transform: rotate(8deg); opacity: var(--no, 0); }
+.swipe-buttons { display: flex; justify-content: center; align-items: center; gap: 22px; }
+.swipe-buttons button:disabled { opacity: 0.4; cursor: default; }
+.vote { width: 64px; height: 64px; border-radius: 50%; border: 2px solid; display: grid; place-items: center; padding: 0; }
+.vote svg { width: 28px; height: 28px; }
+.vote.no { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent); }
+.vote.yes { background: var(--primary); color: var(--on-primary); border-color: var(--primary-ink); }
+.swipe-week .dayrow { grid-template-columns: 48px minmax(0, 1fr); padding: 8px; background: var(--bg); }
+.swipe-week .dayrow.match { background: var(--primary-soft); }
+.swipe-week .dayrow.match small { color: var(--ink); }
+.swipe-week .dn { overflow-wrap: anywhere; }
+.chips.choice { flex-wrap: nowrap; flex-shrink: 0; }
+@media (prefers-reduced-motion: no-preference) { .swipe-card { transition: transform .18s ease-out; } }
 
 /* Woki (public/js/woki.js): Farben je Rolle, Linien mit -s */
 .woki { display: block; flex-shrink: 0; }

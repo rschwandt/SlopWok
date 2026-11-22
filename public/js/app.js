@@ -3,13 +3,14 @@ import { S, get, post, esc, ico, toast, fail, todayISO, loadDishes, setUnauthori
 import { woki } from './woki.js';
 import today from './today.js';
 import plan from './plan.js';
+import swipe from './swipe.js';
 import shop from './shop.js';
 import dishes from './dishes.js';
 import people from './people.js';
 import settings, { syncPush } from './settings.js';
 import { openGoalSheet, openModeSheet } from './goals.js';
 
-const VIEWS = { today, plan, shop, dishes, people, settings };
+const VIEWS = { today, plan, swipe, shop, dishes, people, settings };
 const TABS = [['today', 'Heute', ico.t_today], ['plan', 'Plan', ico.t_plan], ['shop', 'Einkauf', ico.t_shop], ['dishes', 'Gerichte', ico.t_dishes], ['people', 'Leute', ico.t_people]];
 const main = document.getElementById('main');
 let authMode = 'login', authError = '', pendingJoin = '';
@@ -35,7 +36,7 @@ function renderTabs() {
   document.getElementById('tabbar').hidden = !S.me;
   if (!S.me) return;
   document.getElementById('tabs').innerHTML = TABS.map(([v, l, ic]) =>
-    '<button class="tab" data-act="nav" data-v="' + v + '"' + (S.view === v ? ' aria-current="page"' : '') + '>' + ic + '<span>' + l + '</span>' +
+    '<button class="tab" data-act="nav" data-v="' + v + '"' + ((S.view === 'swipe' ? 'plan' : S.view) === v ? ' aria-current="page"' : '') + '>' + ic + '<span>' + l + '</span>' +
     (v === 'people' && S.me.unread ? '<span class="badge" aria-label="' + S.me.unread + ' neue Nachrichten">' + S.me.unread + '</span>' : '') + '</button>').join('');
 }
 S.render = () => {
@@ -47,7 +48,8 @@ S.refresh = async (quiet) => {
   if (!S.me) return S.render();
   const seq = ++loadSeq, view = S.view;
   try { await VIEWS[view].load(); } catch (e) { if (!quiet) fail(e); }
-  if (seq === loadSeq && view === S.view) S.render();
+  // Nicht unter dem Finger neu zeichnen, die Ansicht holt es nach
+  if (seq === loadSeq && view === S.view && !VIEWS[view].busy?.()) S.render();
 };
 S.go = (view, opts = {}) => {
   if (!VIEWS[view]) view = 'today';
@@ -136,7 +138,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && currentShe
 window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (S.me && VIEWS[h] && h !== S.view) S.go(h); });
 
 // Still im Hintergrund aktualisieren, solange niemand tippt oder ein Blatt offen ist.
-const busy = () => currentSheet() || ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
+const busy = () => currentSheet() || VIEWS[S.view].busy?.() || ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
 async function background() {
   if (!S.me || document.visibilityState !== 'visible' || busy()) return;
   try {

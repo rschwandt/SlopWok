@@ -1,6 +1,6 @@
 // Ansicht „Heute": Tagesziel, Mahlzeiten abhaken, Mahlzeiten planen (das warme Gericht gemeinsam) und Extras eintragen.
 import { S, get, post, patch, del, esc, ico, nf, pills, head, chip, avatar, settingsBtn, members, memberName, solo, toast, fmtCount, fmtNice, portions, shortName,
-  todayISO, addDays, wdOf, WDL, WD, dateLabel, openSheet, closeSheet, drawSheet, sourceHtml } from './core.js';
+  todayISO, addDays, nextWeek, wdOf, WDL, WD, dateLabel, openSheet, closeSheet, drawSheet, sourceHtml } from './core.js';
 import { SLOTS, SLOT_LABEL } from '/shared/dish.js';
 import { woki } from './woki.js';
 import { hasPhoto, thumbHtml, bannerHtml, addPhotoHtml, changePhoto, removePhoto, resetPhotoConfirm } from './photo.js';
@@ -55,7 +55,7 @@ function mealCard(m) {
   return '<article class="meal' + (m.slot === 'dinner' ? ' dinner' : '') + (done ? ' done' : '') + '">' +
     (showBanner ? bannerHtml(d, { edit: true }) : '') +
     '<div class="meal-top"><button class="check" role="checkbox" aria-checked="' + done + '" aria-label="' + esc(m.name) + ' gegessen" data-act="eat" data-id="' + m.id + '">' + ico.tick + '</button>' +
-    '<div><span class="eyebrow">' + SLOT_LABEL[m.slot] + (m.auto && !m.leftoverOf ? ' · Vorschlag' : '') + '</span><h3>' + (m.leftoverOf ? 'Rest: ' : '') + esc(m.name) + '</h3>' +
+    '<div><span class="eyebrow">' + SLOT_LABEL[m.slot] + (m.leftoverOf ? '' : m.swiped && !m.pinned ? (m.eaters.length > 1 ? ' · Match' : ' · Geswipet') : m.auto ? ' · Vorschlag' : '') + '</span><h3>' + (m.leftoverOf ? 'Rest: ' : '') + esc(m.name) + '</h3>' +
     pills(m.protein * me.portions, m.kcal * me.portions, m.slot === 'dinner' && d && !m.leftoverOf ? d.minutes : 0) + '</div>' +
     (showBanner ? '' : thumbHtml(d)) + '</div>' +
     body + '<div class="actions">' + actions + '</div></article>';
@@ -84,6 +84,10 @@ function render() {
   if (isToday && S.me.nudge) h += '<button class="woki-card nudge" data-act="nav" data-v="people">' + woki('nudge') + '<div><h3>Angestupst!</h3><p>' + esc(S.me.nudge.text) + '</p></div></button>';
   if (isToday && loaded === date && planned.length && planned.every(m => mine(m).eaten)) h += wokiCard('Satt und fertig', 'Alles gegessen, was für heute geplant war. Woki macht Feierabend.');
   else if (late) h += wokiCard('Feierabend', 'Für heute ist nichts mehr geplant. Woki ruht sich aus, morgen geht es weiter.');
+
+  // Ab Donnerstag erinnern, solange man für die kommende Woche noch nicht geswipet hat
+  if (isToday && wdOf(date) >= 3 && S.me.swipeWeek !== nextWeek(date))
+    h += '<button class="swipe-cta" data-act="nav" data-v="swipe">' + ico.cards + '<span><b>Was gibt es nächste Woche?</b><small>Swipe dich durch die warmen Gerichte</small></span>' + ico.next + '</button>';
 
   const hints = [];
   for (const m of my) {
@@ -124,7 +128,8 @@ const find = id => meals.find(m => m.id === +id);
 function put(meal) { const i = meals.findIndex(m => m.id === meal.id); if (i >= 0) meals[i] = meal; else meals.push(meal); S.render(); }
 
 // ---------- Mahlzeit planen / ändern ----------
-export async function openMealSheet({ date, slot, meal, dishId }) {
+// matched: wer an dem Tag schon ein Match hat und darum nicht als Mitesser vorausgewählt wird
+export async function openMealSheet({ date, slot, meal, dishId, matched = new Set() }) {
   const defPortion = id => members().find(m => m.id === id)?.portion || 1;
   const st = {
     id: meal ? meal.id : null, date: meal ? meal.date : date, slot: meal ? meal.slot : slot, dishId: meal ? meal.dishId : dishId || null,
@@ -132,7 +137,7 @@ export async function openMealSheet({ date, slot, meal, dishId }) {
     seen: [], eaters: {}, cookId: meal ? meal.cookId : null, left: new Set(), leftOrig: '', confirmDel: false
   };
   if (meal) for (const e of meal.eaters) st.eaters[e.userId] = e.portions;
-  else if (slot === 'dinner') for (const m of members()) st.eaters[m.id] = defPortion(m.id);
+  else if (slot === 'dinner') { for (const m of members()) if (!matched.has(m.id)) st.eaters[m.id] = defPortion(m.id); }
   else st.eaters[myId()] = 1;
   if (meal && meal.leftoverPortions) {
     try {
@@ -155,7 +160,7 @@ export async function openMealSheet({ date, slot, meal, dishId }) {
   const together = () => !solo() && (st.slot === 'dinner' || !!st.leftoverOf);
   const setSlot = slot => {
     st.slot = slot;
-    if (slot === 'dinner' || st.leftoverOf) { if (!st.id && Object.keys(st.eaters).length < 2) for (const m of members()) if (st.eaters[m.id] == null) st.eaters[m.id] = defPortion(m.id); return; }
+    if (slot === 'dinner' || st.leftoverOf) { if (!st.id && Object.keys(st.eaters).length < 2) for (const m of members()) if (st.eaters[m.id] == null && !matched.has(m.id)) st.eaters[m.id] = defPortion(m.id); return; }
     st.eaters = { [myId()]: st.eaters[myId()] || 1 }; st.left.clear(); st.cookId = null;
   };
   const total = () => Object.values(st.eaters).reduce((a, b) => a + b, 0) + st.left.size;
@@ -264,7 +269,10 @@ const actions = {
     (seen[m.id] = seen[m.id] || []).push(m.dishId);
     put((await post('/api/meals/' + m.id + '/swap', { seen: seen[m.id] })).meal);
   },
-  addMeal: el => openMealSheet({ date: S.date, slot: el.dataset.slot }),
+  addMeal: el => openMealSheet({
+    date: S.date, slot: el.dataset.slot,
+    matched: new Set(meals.filter(m => m.date === S.date && m.slot === 'dinner' && m.swiped).flatMap(m => m.eaters.map(e => e.userId)))
+  }),
   editMeal: el => openMealSheet({ meal: find(el.dataset.id) }),
   delMeal: async el => { await del('/api/meals/' + el.dataset.id); await S.refresh(); },
   joinMeal: async el => {

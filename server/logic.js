@@ -31,7 +31,7 @@ export function loadMeals(db, where, params) {
     const dish = r.dish_data ? { id: r.dish_id, ...JSON.parse(r.dish_data), photo: r.photo_rev } : null;
     const custom = r.custom ? JSON.parse(r.custom) : null;
     const m = {
-      id: r.id, householdId: r.household_id, date: r.date, slot: r.slot, dishId: r.dish_id, cookId: r.cook_id, leftoverOf: r.leftover_of, auto: !!r.auto,
+      id: r.id, householdId: r.household_id, date: r.date, slot: r.slot, dishId: r.dish_id, cookId: r.cook_id, leftoverOf: r.leftover_of, auto: !!r.auto, swiped: !!r.swiped, pinned: !!r.pinned,
       name: dish ? dish.name : custom ? custom.name : '?', protein: dish ? dish.protein : custom ? custom.protein : 0,
       kcal: dish ? dish.kcal : custom ? custom.kcal : 0, dish, custom: !!custom, eaters: [], leftoverPortions: 0
     };

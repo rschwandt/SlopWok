@@ -14,6 +14,11 @@ einen veganen High-Protein-Monatsplan; dessen 41 Gerichte sind als Startbiblioth
   Mindestwerte für Kalorien und Protein (Mifflin-St Jeor). Eigene Werte gehen weiterhin.
 - **Vorschläge oder selbst planen:** Im Vorschlagsmodus füllt die App freie Mahlzeiten aus dem Fundus – abwechslungsreich
   und passend zum Proteinziel, mit „Tauschen" pro Mahlzeit. Wer lieber selbst plant, schaltet das ab.
+- **Swipen:** Unter Plan swipet jede Person durch die warmen Gerichte für die kommende Woche. Zuerst landet im Plan,
+  was alle mögen, danach kocht jeweils die größte Teilmenge zusammen, die dasselbe mag. Ein Match braucht zwei Personen
+  (außer man wohnt allein). Gemochtes, das nicht gekocht wird, kommt in der nächsten Runde nach vorne. Wer kein Match hat,
+  bekommt wie gewohnt einen Vorschlag. Selbst Geplantes und schon Eingekauftes bleibt stehen. Ab Montag steht die Woche
+  fest und die Runde für die nächste beginnt.
 - **Fortschritt:** Protein- und Kalorienziel pro Tag, Wochenübersicht, Serie. Sichtbar für niemanden, den Haushalt oder
   alle – jede Person entscheidet selbst. Wer sichtbar ist, kann angestupst werden (In-App und per Push).
 - **Gerichte:** Von Hand anlegen oder als JSON importieren, das ein KI-Assistent ausfüllt:
@@ -64,6 +69,7 @@ Auf dem iPhone funktionieren Push-Benachrichtigungen erst, wenn die App über Sa
 server/index.js    HTTP-Server, statische Dateien, Cookies, Schutz vor fremden Ursprüngen
 server/api.js      alle /api-Routen
 server/auto.js     Vorschlagsmodus: Gerichtauswahl und automatisches Füllen
+server/swipe.js    Swipen: verteilt die Stimmen auf die kommende Woche
 server/logic.js    Einkaufsliste, Kostenverteilung, Fortschritt, Serie
 server/db.js       SQLite-Schema, spielt server/seed.json ein
 server/photo.js    Fotos prüfen und von Metadaten befreien (JPEG, ohne Fremdbibliothek)
