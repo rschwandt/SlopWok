@@ -3,6 +3,7 @@ import { S, get, post, patch, del, esc, ico, nf, pills, head, chip, avatar, sett
   todayISO, addDays, wdOf, WDL, WD, dateLabel, openSheet, closeSheet, drawSheet, sourceHtml } from './core.js';
 import { SLOTS, SLOT_LABEL } from '/shared/dish.js';
 import { woki } from './woki.js';
+import { hasPhoto, thumbHtml, bannerHtml, addPhotoHtml, changePhoto, removePhoto, resetPhotoConfirm } from './photo.js';
 
 let meals = [], loaded = '';
 const open = {}, seen = {};
@@ -44,14 +45,19 @@ function mealCard(m) {
     if (isOpen) body += (d.steps.length ? '<ol class="steps">' + d.steps.map(s => '<li>' + esc(s) + '</li>').join('') + '</ol>' : '<div class="note">Für dieses Gericht sind keine Schritte hinterlegt.</div>') +
       (d.tip ? '<div class="note">' + esc(d.tip) + '</div>' : '') + sourceHtml(d.source);
   }
+  // Zugeklappt eine Miniatur, im offenen Rezept das Banner
+  const showBanner = !!d && !m.leftoverOf && isOpen && hasPhoto(d);
   let actions = '';
   if (d && !m.leftoverOf) actions += '<button class="linkbtn" data-act="recipe" data-id="' + m.id + '" aria-expanded="' + isOpen + '">' + ico.book + (isOpen ? 'Zubereitung ausblenden' : 'Zubereitung') + '</button>';
   if (m.auto && d && !m.leftoverOf) actions += '<button class="linkbtn" data-act="swapMeal" data-id="' + m.id + '">' + ico.swap + 'Tauschen</button>';
+  if (d && !m.leftoverOf && isOpen) actions += addPhotoHtml(d);
   actions += '<button class="linkbtn" data-act="editMeal" data-id="' + m.id + '">' + ico.edit + 'Ändern</button>';
   return '<article class="meal' + (m.slot === 'dinner' ? ' dinner' : '') + (done ? ' done' : '') + '">' +
+    (showBanner ? bannerHtml(d, { edit: true }) : '') +
     '<div class="meal-top"><button class="check" role="checkbox" aria-checked="' + done + '" aria-label="' + esc(m.name) + ' gegessen" data-act="eat" data-id="' + m.id + '">' + ico.tick + '</button>' +
     '<div><span class="eyebrow">' + SLOT_LABEL[m.slot] + (m.auto && !m.leftoverOf ? ' · Vorschlag' : '') + '</span><h3>' + (m.leftoverOf ? 'Rest: ' : '') + esc(m.name) + '</h3>' +
-    pills(m.protein * me.portions, m.kcal * me.portions, m.slot === 'dinner' && d && !m.leftoverOf ? d.minutes : 0) + '</div></div>' +
+    pills(m.protein * me.portions, m.kcal * me.portions, m.slot === 'dinner' && d && !m.leftoverOf ? d.minutes : 0) + '</div>' +
+    (showBanner ? '' : thumbHtml(d)) + '</div>' +
     body + '<div class="actions">' + actions + '</div></article>';
 }
 
@@ -142,7 +148,7 @@ export async function openMealSheet({ date, slot, meal, dishId }) {
     const q = st.q.trim().toLowerCase();
     const list = S.dishes.filter(d => (st.all || q ? true : d.slot === st.slot) && (!q || d.name.toLowerCase().includes(q) || d.tags.some(t => t.toLowerCase().includes(q)))).slice(0, 60);
     return list.length ? list.map(d => '<button class="row" data-act="pick" data-id="' + d.id + '"><span class="grow"><span class="nm">' + esc(d.name) + '</span>' +
-      '<span class="why">' + nf(d.protein) + ' g Protein · ' + nf(d.kcal) + ' kcal' + (d.minutes ? ' · ' + d.minutes + ' Min.' : '') + (d.mine ? ' · von dir' : '') + '</span></span></button>').join('')
+      '<span class="why">' + nf(d.protein) + ' g Protein · ' + nf(d.kcal) + ' kcal' + (d.minutes ? ' · ' + d.minutes + ' Min.' : '') + (d.mine ? ' · von dir' : '') + '</span></span>' + thumbHtml(d) + '</button>').join('')
       : '<p class="note">Nichts gefunden. Unter <b>Gerichte</b> kannst du eigene anlegen oder importieren.</p>';
   };
   // Mitessen und für andere auswählen gibt es nur beim warmen Gericht (und seinem Rest am Folgetag)
@@ -162,7 +168,7 @@ export async function openMealSheet({ date, slot, meal, dishId }) {
         '<div class="card"><div class="rows" id="dishlist">' + dishList() + '</div></div>';
     }
     const d = S.dishById.get(st.dishId) || (meal && meal.dish);
-    let h = '<div class="card"><div class="split"><h3>' + (st.leftoverOf ? 'Rest: ' : '') + esc(d ? d.name : meal.name) + '</h3></div>' + (d ? pills(d.protein, d.kcal, d.minutes) + '<span class="note">Werte pro Portion</span>' : '') +
+    let h = '<div class="card">' + (d ? bannerHtml(d) : '') + '<div class="split"><h3>' + (st.leftoverOf ? 'Rest: ' : '') + esc(d ? d.name : meal.name) + '</h3></div>' + (d ? pills(d.protein, d.kcal, d.minutes) + '<span class="note">Werte pro Portion</span>' : '') +
       (st.custom || st.leftoverOf ? '' : '<div class="actions"><button class="linkbtn" data-act="repick">Anderes Gericht</button><button class="linkbtn" data-act="suggest">' + ico.swap + 'Anderer Vorschlag</button></div>') + '</div>';
     if (!st.leftoverOf) h += '<div class="row2"><div class="field"><label for="m-date">Tag</label><input id="m-date" type="date" data-change="date" value="' + st.date + '"></div>' +
       '<div class="field"><label for="m-slot">Mahlzeit</label><select id="m-slot" data-change="slot">' + SLOTS.map(s => '<option value="' + s + '"' + (s === st.slot ? ' selected' : '') + '>' + SLOT_LABEL[s] + '</option>').join('') + '</select></div></div>';
@@ -246,7 +252,8 @@ function openExtraSheet() {
 
 const actions = {
   day: el => { S.date = el.dataset.d === '0' ? todayISO() : addDays(S.date, +el.dataset.d); S.render(); S.refresh(); },
-  recipe: el => { open[el.dataset.id] = !open[el.dataset.id]; S.render(); },
+  recipe: el => { open[el.dataset.id] = !open[el.dataset.id]; resetPhotoConfirm(); S.render(); },
+  photoDel: el => removePhoto(el, () => S.render(), () => S.refresh()),
   eat: async el => {
     const m = find(el.dataset.id), e = mine(m);
     e.eaten = !e.eaten; S.render(); // sofort zeigen, Server bestätigt
@@ -268,4 +275,5 @@ const actions = {
   addExtra: () => openExtraSheet()
 };
 
-export default { load, render, actions };
+const onChange = el => { if (el.dataset.change === 'photo') return changePhoto(el, () => S.render(), () => S.refresh()); };
+export default { load, render, actions, onChange };

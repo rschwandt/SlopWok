@@ -1,7 +1,8 @@
 // Ansicht „Gerichte": Bibliothek, eigenes Gericht anlegen/ändern, Import im Format slopwok.dish/v1.
-import { S, post, api, del, esc, ico, nf, pills, head, chip, settingsBtn, toast, copyText, fmtQ, loadDishes, openSheet, closeSheet, drawSheet, sourceHtml } from './core.js';
+import { S, post, api, del, esc, ico, nf, pills, head, chip, settingsBtn, toast, copyText, fmtQ, loadDishes, openSheet, closeSheet, drawSheet, currentSheet, sourceHtml } from './core.js';
 import { SLOTS, SLOT_LABEL, CATEGORIES, UNITS, validateDish, parseImport, exportDish, LLM_PROMPT, FORMAT, sourceLabel } from '/shared/dish.js';
 import { openMealSheet } from './today.js';
+import { photosOn, thumbHtml, bannerHtml, addPhotoHtml, figureHtml, pickHtml, compressPhoto, savePhoto, changePhoto, removePhoto, resetPhotoConfirm } from './photo.js';
 
 let q = '', filter = 'all';
 
@@ -11,7 +12,7 @@ function listHtml() {
     (!s || d.name.toLowerCase().includes(s) || d.tags.some(t => t.toLowerCase().includes(s)) || d.ingredients.some(i => i.name.toLowerCase().includes(s))));
   if (!list.length) return '<p class="note">' + (filter === 'mine' && !s ? 'Noch keine eigenen Gerichte. Leg eins an oder importiere Rezepte.' : 'Nichts gefunden.') + '</p>';
   return list.map(d => '<button class="row" data-act="dish" data-id="' + d.id + '"><span class="grow"><span class="nm">' + esc(d.name) + '</span>' +
-    '<span class="why">' + SLOT_LABEL[d.slot] + ' · ' + nf(d.protein) + ' g Protein · ' + nf(d.kcal) + ' kcal' + (d.minutes ? ' · ' + d.minutes + ' Min.' : '') + (d.builtin ? '' : ' · von ' + esc(d.mine ? 'dir' : d.ownerName || '?')) + '</span></span></button>').join('');
+    '<span class="why">' + SLOT_LABEL[d.slot] + ' · ' + nf(d.protein) + ' g Protein · ' + nf(d.kcal) + ' kcal' + (d.minutes ? ' · ' + d.minutes + ' Min.' : '') + (d.builtin ? '' : ' · von ' + esc(d.mine ? 'dir' : d.ownerName || '?')) + '</span></span>' + thumbHtml(d) + '</button>').join('');
 }
 function render() {
   return head(S.dishes.length + ' Gerichte', 'Gerichte', settingsBtn()) +
@@ -24,18 +25,23 @@ function render() {
 // ---------- Detail ----------
 function openDish(d) {
   let confirm = false;
-  openSheet({
+  resetPhotoConfirm();
+  const redraw = () => { if (currentSheet() === def) drawSheet(); };
+  const photoDone = photo => { d.photo = photo; redraw(); if (S.view === 'dishes') S.render(); };
+  const def = {
     title: d.name,
-    render: () => '<div class="card">' + pills(d.protein, d.kcal, d.minutes) + '<span class="note">' + SLOT_LABEL[d.slot] + ' · Mengen für 1 Portion' + (d.tags.length ? ' · ' + esc(d.tags.join(', ')) : '') + '</span>' +
+    render: () => '<div class="card">' + bannerHtml(d, { edit: true }) + pills(d.protein, d.kcal, d.minutes) + '<span class="note">' + SLOT_LABEL[d.slot] + ' · Mengen für 1 Portion' + (d.tags.length ? ' · ' + esc(d.tags.join(', ')) : '') + '</span>' +
       (d.ingredients.length ? '<ul class="ing">' + d.ingredients.map(i => '<li><span>' + esc(i.name) + '</span><span>' + fmtQ(i.amount, i.unit) + '</span></li>').join('') + '</ul>' : '') +
       (d.basics.length ? '<div class="basics"><b>Aus dem Vorrat:</b> ' + esc(d.basics.join(', ')) + '</div>' : '') +
       (d.steps.length ? '<ol class="steps">' + d.steps.map(s => '<li>' + esc(s) + '</li>').join('') + '</ol>' : '') +
       (d.tip ? '<div class="note">' + esc(d.tip) + '</div>' : '') + sourceHtml(d.source) + '</div>' +
       '<button class="btn wide" data-act="plan">' + ico.t_plan + 'Einplanen</button>' +
-      '<div class="actions">' + (d.mine ? '<button class="linkbtn" data-act="edit">' + ico.edit + 'Bearbeiten</button>' : '<button class="linkbtn" data-act="copyEdit">' + ico.edit + 'Als eigenes Gericht anpassen</button>') +
+      '<div class="actions">' + addPhotoHtml(d) + (d.mine ? '<button class="linkbtn" data-act="edit">' + ico.edit + 'Bearbeiten</button>' : '<button class="linkbtn" data-act="copyEdit">' + ico.edit + 'Als eigenes Gericht anpassen</button>') +
       '<button class="linkbtn" data-act="json">' + ico.copy + 'JSON kopieren</button>' +
       (d.mine ? (confirm ? '<button class="linkbtn danger" data-act="delYes">Wirklich löschen</button>' : '<button class="linkbtn danger" data-act="del">' + ico.trash + 'Löschen</button>') : '') + '</div>',
+    onChange: el => { if (el.dataset.change === 'photo') return changePhoto(el, redraw, photoDone); },
     actions: {
+      photoDel: el => removePhoto(el, redraw, photoDone),
       plan: () => openMealSheet({ date: S.date, slot: d.slot, dishId: d.id }),
       edit: () => openForm(d, d.id),
       copyEdit: () => openForm(d, null),
@@ -43,7 +49,8 @@ function openDish(d) {
       del: () => { confirm = true; drawSheet(); },
       delYes: async () => { await del('/api/dishes/' + d.id); closeSheet(); await loadDishes(); toast('Gelöscht'); S.render(); }
     }
-  });
+  };
+  openSheet(def);
 }
 
 // ---------- Formular ----------
@@ -51,10 +58,18 @@ function openForm(src, id) {
   const st = {
     name: src ? src.name : '', slot: src ? src.slot : 'dinner', minutes: src ? src.minutes : '', protein: src ? src.protein : '', kcal: src ? src.kcal : '',
     ings: src ? src.ingredients.map(i => ({ ...i })) : [{ name: '', amount: '', unit: 'g', category: 'gemuese' }],
-    basics: src ? src.basics.join(', ') : '', steps: src ? src.steps.join('\n') : '', tip: src ? src.tip || '' : '', source: src ? src.source || '' : '', tags: src ? src.tags : [], errors: []
+    basics: src ? src.basics.join(', ') : '', steps: src ? src.steps.join('\n') : '', tip: src ? src.tip || '' : '', source: src ? src.source || '' : '', tags: src ? src.tags : [], errors: [],
+    photo: null, photoGone: false, photoBusy: false // photo: gewählt, wird erst beim Speichern hochgeladen
+  };
+  const photoField = () => {
+    if (!photosOn()) return '';
+    if (!st.photo && (st.photoGone || !src?.photo)) return '<div class="actions">' + pickHtml('Foto hinzufügen', '', st.photoBusy) + '</div>';
+    const tools = pickHtml('Foto ändern', '', st.photoBusy) + '<button type="button" class="linkbtn danger" data-act="photoClear" aria-label="Foto entfernen">' + ico.trash + '</button>';
+    const url = st.photo ? 'data:image/jpeg;base64,' + st.photo.full : esc('/api/dishes/' + src.id + '/photo/' + src.photo);
+    return figureHtml(url, 'Foto des Gerichts', tools);
   };
   const f = (key, label, attrs = '') => '<div class="field"><label for="f-' + key + '">' + label + '</label><input id="f-' + key + '" data-input="' + key + '" value="' + esc(st[key]) + '" ' + attrs + '></div>';
-  const render = () => f('name', 'Name', 'maxlength="120" placeholder="z. B. Linsen-Bolognese"') +
+  const render = () => photoField() + f('name', 'Name', 'maxlength="120" placeholder="z. B. Linsen-Bolognese"') +
     '<div class="row2"><div class="field"><label for="f-slot">Mahlzeit</label><select id="f-slot" data-change="slot">' + SLOTS.map(s => '<option value="' + s + '"' + (s === st.slot ? ' selected' : '') + '>' + SLOT_LABEL[s] + '</option>').join('') + '</select></div>' +
     f('minutes', 'Minuten', 'inputmode="numeric"') + '</div>' +
     '<div class="row2">' + f('protein', 'Protein (g) pro Portion', 'inputmode="decimal"') + f('kcal', 'Kalorien pro Portion', 'inputmode="numeric"') + '</div>' +
@@ -72,14 +87,34 @@ function openForm(src, id) {
     f('source', 'Quelle (optional)', 'inputmode="url" autocapitalize="off" spellcheck="false" placeholder="Link zur Rezeptseite oder z. B. Kochbuch, S. 42"') +
     (st.errors.length ? '<div class="err" role="alert">' + st.errors.map(esc).join('<br>') + '</div>' : '') +
     '<button class="btn wide" data-act="save">' + (id ? 'Speichern' : 'Gericht anlegen') + '</button>';
-  openSheet({
+  const redraw = () => { if (currentSheet() === def) drawSheet(); };
+  const pickPhoto = async el => {
+    const file = el.files && el.files[0];
+    if (!file) return;
+    st.photoBusy = true; redraw();
+    try { st.photo = await compressPhoto(file); st.photoGone = false; } finally { st.photoBusy = false; redraw(); }
+  };
+  // Erst nach dem Gericht: ein neues hat vorher keine Kennung
+  const storePhoto = async dishId => {
+    if (!photosOn()) return;
+    if (st.photo) return savePhoto(dishId, st.photo);
+    if (st.photoGone) { if (id && src?.photo) await del('/api/dishes/' + dishId + '/photo'); return; }
+    if (!id && src?.photo) await savePhoto(dishId, { copyFrom: src.id });
+  };
+  const def = {
     title: id ? 'Gericht bearbeiten' : 'Neues Gericht', render,
     onInput: el => { if (el.dataset.input === 'ing') st.ings[+el.dataset.k][el.dataset.f] = el.value; else st[el.dataset.input] = el.value; },
-    onChange: el => { if (el.dataset.change === 'ing') st.ings[+el.dataset.k][el.dataset.f] = el.value; else st.slot = el.value; },
+    onChange: el => {
+      if (el.dataset.change === 'photo') return pickPhoto(el);
+      if (el.dataset.change === 'ing') st.ings[+el.dataset.k][el.dataset.f] = el.value;
+      else if (el.dataset.change === 'slot') st.slot = el.value;
+    },
     actions: {
+      photoClear: () => { st.photo = null; st.photoGone = true; drawSheet(); },
       addIng: () => { st.ings.push({ name: '', amount: '', unit: 'g', category: st.ings.length ? st.ings[st.ings.length - 1].category : 'gemuese' }); drawSheet(); },
       rmIng: el => { st.ings.splice(+el.dataset.k, 1); drawSheet(); },
       save: async () => {
+        if (st.photoBusy) return toast('Das Foto ist gleich fertig …');
         const raw = {
           name: st.name, slot: st.slot, minutes: st.minutes || 0, protein: st.protein, kcal: st.kcal, tags: st.tags,
           ingredients: st.ings.filter(i => String(i.name).trim()), basics: st.basics.split(',').map(s => s.trim()).filter(Boolean),
@@ -88,12 +123,18 @@ function openForm(src, id) {
         const v = validateDish(raw);
         if (!v.dish) { st.errors = v.errors; drawSheet(); return; }
         const r = await api(id ? 'PUT' : 'POST', '/api/dishes' + (id ? '/' + id : ''), raw);
-        await loadDishes(); closeSheet(); toast(id ? 'Gespeichert' : 'Angelegt'); S.render();
+        let photoError = '';
+        try { await storePhoto(r.dish.id); } catch (e) { photoError = e.message; }
+        await loadDishes(); closeSheet();
+        if (photoError) toast('Gericht gespeichert, das Foto nicht: ' + photoError, true);
+        else toast(id ? 'Gespeichert' : 'Angelegt');
+        S.render();
         if (!id) { filter = 'mine'; S.render(); }
         return r;
       }
     }
-  });
+  };
+  openSheet(def);
 }
 
 // ---------- Import ----------

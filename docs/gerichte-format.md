@@ -61,3 +61,5 @@ Mehrere Gerichte auf einmal: eine Liste `[ {...}, {...} ]` oder `{"format": "slo
 | `store` | nein | Spezialladen; solche Zutaten bekommen eine eigene Liste |
 
 Unbekannte Felder werden verworfen. Bei Fehlern wird nichts importiert; die App zeigt je Gericht, was fehlt.
+
+Fotos gehören nicht zum Format: Sie liegen je Haushalt in der App und werden weder importiert noch exportiert.

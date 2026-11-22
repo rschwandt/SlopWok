@@ -5,6 +5,7 @@ import { validateDish, SLOTS } from '../shared/dish.js';
 import * as L from './logic.js';
 import { sendPush, generateVapidKeys } from './push.js';
 import { makeAuto } from './auto.js';
+import { LIMITS, readPhoto } from './photo.js';
 
 const scrypt = promisify(crypto.scrypt);
 
@@ -40,6 +41,7 @@ function cents(v) {
 }
 const date = v => (L.isIso(v) ? v : bad('Ungültiges Datum.'));
 const MEAL_SLOTS = [...SLOTS, 'extra'];
+const MAX_PHOTOS = 300; // je Haushalt, höchstens rund 160 MB
 // Gemeinsam gegessen (und für andere ausgewählt) wird nur das warme Gericht – und sein Rest am Folgetag.
 // Frühstück, Mittag, Snack und Extras plant jede Person nur für sich.
 const SOLO_MSG = 'Zusammen esst ihr nur das warme Gericht. Frühstück, Mittag, Snack und Extras plant jede Person für sich.';
@@ -61,6 +63,10 @@ function removeFromFutureMeals(db, userId, hhId, today) {
 // Haushaltswechsel. War man allein, zieht der eigene Plan mit um und der leere Haushalt wird gelöscht.
 function moveUser(db, user, targetHhId, today) {
   const old = user.household_id;
+  // Selbst hochgeladene Fotos kommen mit, die der anderen nie. Was der Zielhaushalt schon hat, behält Vorrang.
+  db.run(`INSERT OR IGNORE INTO dish_photos (household_id, dish_id, rev, by_id, created, thumb, full)
+          SELECT ?, p.dish_id, p.rev, p.by_id, p.created, p.thumb, p.full FROM dish_photos p JOIN dishes d ON d.id = p.dish_id
+          WHERE p.household_id = ? AND p.by_id = ? AND d.deleted = 0 AND (d.key IS NOT NULL OR d.owner_id = ?)`, targetHhId, old, user.id, user.id);
   db.run('UPDATE users SET household_id = ? WHERE id = ?', targetHhId, user.id);
   const left = db.get('SELECT COUNT(*) AS n FROM users WHERE household_id = ?', old).n;
   if (left === 0) {
@@ -178,6 +184,7 @@ export function createApi(db, cfg = {}) {
       if (['manual', 'auto'].includes(n.mode)) s.mode = n.mode;
       if (Array.isArray(n.autoSlots)) s.autoSlots = SLOTS.filter(x => n.autoSlots.includes(x));
       if (typeof n.autoLeftover === 'boolean') s.autoLeftover = n.autoLeftover;
+      if (typeof n.photos === 'boolean') s.photos = n.photos;
       if (n.profile === null) s.profile = null;
       else if (n.profile && typeof n.profile === 'object') {
         const p = n.profile, within = (v, lo, hi) => (Number(v) >= lo && Number(v) <= hi ? Math.round(Number(v) * 10) / 10 : bad('Bitte die Angaben prüfen.'));
@@ -232,13 +239,14 @@ export function createApi(db, cfg = {}) {
   });
 
   // ---------- Gerichte ----------
-  const dishOut = (r, userId) => ({ id: r.id, owner: r.owner_id, ownerName: r.owner_display || null, mine: r.owner_id === userId, builtin: r.owner_id == null && !!r.key, ...JSON.parse(r.data) });
-  const visibleDish = (c, id) => db.get(`SELECT d.*, u.display AS owner_display FROM dishes d LEFT JOIN users u ON u.id = d.owner_id
-    WHERE d.id = ? AND d.deleted = 0 AND (d.key IS NOT NULL OR d.owner_id IN (SELECT id FROM users WHERE household_id = ?))`, id, c.hh.id);
+  const dishOut = (r, userId) => ({ id: r.id, owner: r.owner_id, ownerName: r.owner_display || null, mine: r.owner_id === userId, builtin: r.owner_id == null && !!r.key, ...JSON.parse(r.data), photo: r.photo_rev });
+  const DISH_SQL = `SELECT d.*, u.display AS owner_display, p.rev AS photo_rev FROM dishes d LEFT JOIN users u ON u.id = d.owner_id
+    LEFT JOIN dish_photos p ON p.dish_id = d.id AND p.household_id = ?
+    WHERE d.deleted = 0 AND (d.key IS NOT NULL OR d.owner_id IN (SELECT id FROM users WHERE household_id = ?))`;
+  const visibleDish = (c, id) => db.get(DISH_SQL + ' AND d.id = ?', c.hh.id, c.hh.id, id);
 
   route('GET', '/api/dishes', c => ({
-    dishes: db.all(`SELECT d.*, u.display AS owner_display FROM dishes d LEFT JOIN users u ON u.id = d.owner_id
-      WHERE d.deleted = 0 AND (d.key IS NOT NULL OR d.owner_id IN (SELECT id FROM users WHERE household_id = ?)) ORDER BY d.name COLLATE NOCASE`, c.hh.id)
+    dishes: db.all(DISH_SQL + ' ORDER BY d.name COLLATE NOCASE', c.hh.id, c.hh.id)
       .map(r => dishOut(r, c.user.id)),
     basicInfo: db.kv.get('basicInfo') || {}
   }));
@@ -269,7 +277,39 @@ export function createApi(db, cfg = {}) {
     const row = visibleDish(c, int(c.params.id)) || bad('Gericht nicht gefunden.', 404);
     if (row.owner_id !== c.user.id) bad('Nur wer das Gericht angelegt hat, kann es löschen.', 403);
     db.run('UPDATE dishes SET deleted = 1 WHERE id = ?', row.id); // geplante Mahlzeiten behalten ihr Gericht
+    db.run('DELETE FROM dish_photos WHERE dish_id = ? AND household_id NOT IN (SELECT household_id FROM meals WHERE dish_id = ?)', row.id, row.id); // … und dessen Foto
     return { ok: true };
+  });
+
+  // ---------- Fotos zu Gerichten (Opt-in je Konto, ein Foto je Haushalt) ----------
+  const photosOnly = c => { if (!L.userSettings(c.user).photos) bad('Fotos sind ausgeschaltet. Du schaltest sie unter Einstellungen › Optionen ein.', 403); };
+  route('GET', '/api/dishes/:id/photo/:rev', c => {
+    const col = c.query.size === 'thumb' ? 'thumb' : 'full';
+    const row = db.get(`SELECT ${col} AS img FROM dish_photos WHERE household_id = ? AND dish_id = ? AND rev = ?`, c.hh.id, int(c.params.id), c.params.rev) || bad('Foto nicht gefunden.', 404);
+    return { _jpeg: Buffer.from(row.img) };
+  });
+  route('PUT', '/api/dishes/:id/photo', c => {
+    photosOnly(c);
+    const dish = visibleDish(c, int(c.params.id)) || bad('Gericht nicht gefunden.', 404);
+    let img;
+    if (c.body.copyFrom != null) {
+      // Beim Anpassen als eigenes Gericht. by_id bleibt, sonst zöge ein fremdes Foto beim Haushaltswechsel mit um.
+      img = db.get('SELECT thumb, full, by_id FROM dish_photos WHERE household_id = ? AND dish_id = ?', c.hh.id, int(c.body.copyFrom)) || bad('Foto nicht gefunden.', 404);
+    } else {
+      img = { thumb: readPhoto(c.body.thumb, LIMITS.thumb), full: readPhoto(c.body.full, LIMITS.full), by_id: c.user.id };
+      if (!img.thumb || !img.full) bad('Das Foto ist kein gültiges JPEG oder zu groß.');
+    }
+    if (db.get('SELECT COUNT(*) AS n FROM dish_photos WHERE household_id = ? AND dish_id != ?', c.hh.id, dish.id).n >= MAX_PHOTOS) bad('Euer Haushalt hat schon ' + MAX_PHOTOS + ' Fotos. Entfernt erst eins.');
+    const rev = crypto.randomBytes(8).toString('hex');
+    db.run(`INSERT INTO dish_photos (household_id, dish_id, rev, by_id, created, thumb, full) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT (household_id, dish_id) DO UPDATE SET rev = excluded.rev, by_id = excluded.by_id, created = excluded.created, thumb = excluded.thumb, full = excluded.full`,
+      c.hh.id, dish.id, rev, img.by_id, Date.now(), img.thumb, img.full);
+    return { photo: rev };
+  });
+  route('DELETE', '/api/dishes/:id/photo', c => {
+    photosOnly(c);
+    db.run('DELETE FROM dish_photos WHERE household_id = ? AND dish_id = ?', c.hh.id, int(c.params.id));
+    return { photo: null };
   });
 
   // ---------- Mahlzeiten ----------

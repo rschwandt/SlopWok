@@ -1,9 +1,9 @@
 // Ansicht „Einstellungen": Profil, Ziele, Privatsphäre, Benachrichtigungen, Einkaufstage, Konto.
-import { S, get, post, patch, esc, ico, head, chip, toast, solo, WD, fmtCount } from './core.js';
+import { S, get, post, patch, esc, ico, head, chip, toast, solo, loadDishes, WD, fmtCount } from './core.js';
 import { SLOTS, SLOT_LABEL } from '/shared/dish.js';
 import { openGoalSheet, GOALS } from './goals.js';
 
-let push = { supported: false, state: 'unknown', busy: false }, pwMsg = '';
+let push = { supported: false, state: 'unknown', busy: false }, pwMsg = '', tab = 'general';
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -58,9 +58,19 @@ async function load() { S.me = await get('/api/me'); await pushStatus(); }
 
 const seg = (act, value, options) => '<div class="seg">' + options.map(([v, t, d]) => '<button data-act="' + act + '" data-v="' + v + '" aria-pressed="' + (value === v) + '"><b>' + t + '</b><small>' + d + '</small></button>').join('') + '</div>';
 
+// Zusatzfunktionen, die man bewusst einschaltet
+function renderOptions(s) {
+  return '<div class="card"><button class="opt" role="switch" aria-checked="' + s.photos + '" data-act="photos">' +
+    '<span class="opt-text"><b>Fotos zu Gerichten</b><small>Fotos hinzufügen, ändern und bei den Gerichten sehen.</small></span><span class="switch" aria-hidden="true"></span></button>' +
+    '<p class="note">Standardmäßig ausgeschaltet, gilt nur für dein Konto. ' + (solo() ? 'Deine Fotos sieht niemand außerhalb deines Haushalts.' : 'Ein Foto gehört eurem Haushalt: Alle dort, die Fotos eingeschaltet haben, sehen es und können es ändern. Andere Haushalte sehen es nicht.') +
+    ' Standort und andere Metadaten werden beim Hochladen entfernt.</p></div>';
+}
+
 function render() {
   const u = S.me.user, s = u.settings, hh = S.me.household;
   let h = head('@' + esc(u.name), 'Einstellungen', '<button class="iconbtn" data-act="nav" data-v="today" aria-label="Zurück">' + ico.close + '</button>');
+  h += '<div class="seg-tabs">' + [['general', 'Allgemein'], ['options', 'Optionen']].map(([v, l]) => '<button data-act="settingsTab" data-v="' + v + '" aria-pressed="' + (tab === v) + '">' + l + '</button>').join('') + '</div>';
+  if (tab === 'options') return h + renderOptions(s);
   h += '<div class="card"><h2>Profil</h2><form class="field" data-form="display"><label for="s-display">Anzeigename</label><div class="inline"><input class="input" id="s-display" name="display" maxlength="40" required value="' + esc(u.display) + '"><button class="linkbtn">Speichern</button></div></form></div>';
 
   const prof = s.profile;
@@ -123,6 +133,12 @@ const actions = {
     return saveUser({ autoSlots: cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v] });
   },
   share: el => saveUser({ share: el.dataset.v }),
+  settingsTab: el => { tab = el.dataset.v; S.render(); },
+  photos: async () => {
+    await saveUser({ photos: !S.me.user.settings.photos });
+    document.querySelector('[data-act="photos"]')?.focus(); // neu gezeichnet, Tastaturfokus zurückgeben
+    if (S.me.user.settings.photos) await loadDishes();
+  },
   nudge: () => saveUser({ nudge: !S.me.user.settings.nudge }),
   split: el => saveHh({ split: el.dataset.v }),
   shopday: el => {
@@ -145,4 +161,4 @@ const submit = {
   display: async d => { S.me = await patch('/api/me', { display: d.display }); toast('Gespeichert'); S.render(); },
   password: async (d, form) => { await patch('/api/me', d); pwMsg = 'Passwort geändert. Andere Geräte wurden abgemeldet.'; form.reset(); S.render(); }
 };
-export default { load, render, actions, submit, onChange, enter: () => { pwMsg = ''; } };
+export default { load, render, actions, submit, onChange, enter: () => { pwMsg = ''; tab = 'general'; } };

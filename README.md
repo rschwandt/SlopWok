@@ -19,6 +19,9 @@ einen veganen High-Protein-Monatsplan; dessen 41 Gerichte sind als Startbiblioth
 - **Gerichte:** Von Hand anlegen oder als JSON importieren, das ein KI-Assistent ausfüllt:
   [docs/gerichte-format.md](docs/gerichte-format.md). Importierte Gerichte verlinken auf ihre Originalseite, wenn die Quelle
   bekannt ist (für Bilder und Details).
+- **Fotos (Opt-in):** Standardmäßig ausgeschaltet. Wer sie unter Einstellungen › Optionen einschaltet, kann jedem Gericht ein Foto
+  geben, auch den mitgelieferten. Je Haushalt gibt es ein Foto pro Gericht, sichtbar nur dort. Der Browser verkleinert,
+  der Server entfernt Metadaten wie den Standort.
 
 ## Starten
 
@@ -29,7 +32,7 @@ npm start          # http://localhost:8787
 npm test
 ```
 
-Die Daten liegen in `data/slopwok.db` (SQLite; eine ältere `data/kochrunde.db` wird weiterbenutzt). Backup = diese Datei kopieren.
+Die Daten liegen in `data/slopwok.db` (SQLite; eine ältere `data/kochrunde.db` wird weiterbenutzt). Fotos stehen mit darin. Backup = `VACUUM INTO 'backup.db'` (die Datei allein zu kopieren verliert, was noch in der `-wal`-Datei steht).
 
 | Variable | Bedeutung |
 | --- | --- |
@@ -63,9 +66,11 @@ server/api.js      alle /api-Routen
 server/auto.js     Vorschlagsmodus: Gerichtauswahl und automatisches Füllen
 server/logic.js    Einkaufsliste, Kostenverteilung, Fortschritt, Serie
 server/db.js       SQLite-Schema, spielt server/seed.json ein
+server/photo.js    Fotos prüfen und von Metadaten befreien (JPEG, ohne Fremdbibliothek)
 server/push.js     Web Push (VAPID + aes128gcm) ohne Fremdbibliothek
 shared/dish.js     Gerichteformat: Prüfung, Import, LLM-Prompt (läuft in Browser und Server)
 public/            die Web-App (ES-Module, kein Framework)
+public/js/photo.js Fotos anzeigen, verkleinern, hochladen
 public/js/woki.js  Woki, das Maskottchen (SVG, drei Stimmungen); Quelle für die App-Icons
 tools/build-seed.mjs  erzeugt server/seed.json aus der ursprünglichen Einzelnutzer-App
 tools/build-icons.mjs erzeugt public/icons/ aus woki.js (braucht rsvg-convert)

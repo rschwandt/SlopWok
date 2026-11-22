@@ -12,7 +12,8 @@ const WD = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 // mode: 'manual' = selbst planen, 'auto' = freie Mahlzeiten werden aus dem Fundus vorgeschlagen
 export const DEFAULT_USER = {
   pGoal: 130, kGoal: 2800, portion: 1, share: 'household', nudge: true,
-  mode: 'manual', autoSlots: ['breakfast', 'lunch', 'snack', 'dinner'], autoLeftover: true, profile: null
+  mode: 'manual', autoSlots: ['breakfast', 'lunch', 'snack', 'dinner'], autoLeftover: true, profile: null,
+  photos: false // Fotos zu Gerichten gibt es nur für die, die sie unter Einstellungen › Optionen einschalten
 };
 export const DEFAULT_HH = { shopDays: [0, 2, 5], split: 'equal' };
 export const userSettings = u => ({ ...DEFAULT_USER, ...JSON.parse(u.settings || '{}') });
@@ -20,12 +21,14 @@ export const hhSettings = h => ({ ...DEFAULT_HH, ...JSON.parse(h.settings || '{}
 
 // ---------- Mahlzeiten ----------
 export function loadMeals(db, where, params) {
-  const rows = db.all(`SELECT m.*, d.name AS dish_name, d.data AS dish_data, d.owner_id AS dish_owner
-                       FROM meals m LEFT JOIN dishes d ON d.id = m.dish_id WHERE ${where} ORDER BY m.date, m.id`, ...params);
+  const rows = db.all(`SELECT m.*, d.name AS dish_name, d.data AS dish_data, d.owner_id AS dish_owner, p.rev AS photo_rev
+                       FROM meals m LEFT JOIN dishes d ON d.id = m.dish_id
+                       LEFT JOIN dish_photos p ON p.dish_id = m.dish_id AND p.household_id = m.household_id
+                       WHERE ${where} ORDER BY m.date, m.id`, ...params);
   if (!rows.length) return [];
   const byId = new Map();
   const meals = rows.map(r => {
-    const dish = r.dish_data ? { id: r.dish_id, ...JSON.parse(r.dish_data) } : null;
+    const dish = r.dish_data ? { id: r.dish_id, ...JSON.parse(r.dish_data), photo: r.photo_rev } : null;
     const custom = r.custom ? JSON.parse(r.custom) : null;
     const m = {
       id: r.id, householdId: r.household_id, date: r.date, slot: r.slot, dishId: r.dish_id, cookId: r.cook_id, leftoverOf: r.leftover_of, auto: !!r.auto,

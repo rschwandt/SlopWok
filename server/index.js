@@ -74,7 +74,12 @@ export function createServer(opts = {}) {
       }
       const token = (req.headers.cookie || '').split(/;\s*/).map(c => c.split('=')).find(c => c[0] === COOKIE)?.[1] || '';
       const out = await api({ method: req.method, path: url.pathname, query: Object.fromEntries(url.searchParams), body, token });
-      const { _session, ...rest } = out || {};
+      const { _session, _jpeg, ...rest } = out || {};
+      if (_jpeg) {
+        // Die Adresse enthält die Version des Fotos, darum darf der Browser es behalten – aber kein Proxy
+        res.writeHead(200, { ...SECURITY, 'Content-Type': 'image/jpeg', 'Content-Length': _jpeg.length, 'Cache-Control': 'private, max-age=31536000, immutable', 'Cross-Origin-Resource-Policy': 'same-origin' });
+        return res.end(_jpeg);
+      }
       send(200, rest, _session);
     } catch (e) {
       if (e instanceof HttpError) return send(e.status, { error: e.message });

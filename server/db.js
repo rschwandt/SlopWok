@@ -86,6 +86,15 @@ CREATE TABLE IF NOT EXISTS auto_skips (
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, date TEXT NOT NULL, slot TEXT NOT NULL,
   PRIMARY KEY (user_id, date, slot)
 );
+-- Ein Foto je Haushalt und Gericht. rev ändert sich mit jedem Bild und steht in der Adresse (dauerhaft cachebar).
+-- Die BLOBs stehen hinten, damit Listen beim Lesen von rev nicht die Bilder mitladen.
+CREATE TABLE IF NOT EXISTS dish_photos (
+  household_id INTEGER NOT NULL REFERENCES households(id) ON DELETE CASCADE,
+  dish_id INTEGER NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
+  rev TEXT NOT NULL, by_id INTEGER REFERENCES users(id) ON DELETE SET NULL, created INTEGER NOT NULL,
+  thumb BLOB NOT NULL, full BLOB NOT NULL,
+  PRIMARY KEY (household_id, dish_id)
+);
 CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 `;
 

@@ -32,7 +32,9 @@ function client() {
     if (set) cookie = set.split(';')[0];
     return { status: res.status, ...(await res.json()) };
   };
-  return { get: p => call('GET', p), post: (p, b) => call('POST', p, b), patch: (p, b) => call('PATCH', p, b), put: (p, b) => call('PUT', p, b), del: p => call('DELETE', p) };
+  // Rohe Antwort, für Bilder
+  const raw = p => fetch(base + p, { headers: cookie ? { Cookie: cookie } : {} });
+  return { raw, get: p => call('GET', p), post: (p, b) => call('POST', p, b), patch: (p, b) => call('PATCH', p, b), put: (p, b) => call('PUT', p, b), del: p => call('DELETE', p) };
 }
 
 const anna = client(), ben = client(), cleo = client();
@@ -366,4 +368,107 @@ test('Eigene Mahlzeiten und „gegessen“ der anderen bleiben privat', async ()
   assert.equal(eatenOf(view[0]), false);
   assert.equal(eatenOf((await two.post(`/api/meals/${din.id}/eaten`, { eaten: true })).meal), false);
   assert.equal(eatenOf((await two.patch(`/api/meals/${din.id}`, { cookId: T.user.id })).meal), false);
+});
+
+// Kein dekodierbares Bild, aber ein korrekt aufgebautes JPEG: mehr prüft der Server nicht
+function jpeg({ w = 64, h = 48, extra = [], scans = 1, scan = [0x11, 0xff, 0x00, 0xff, 0xd0, 0x22], tail = '' } = {}) {
+  const seg = (m, body) => Buffer.concat([Buffer.from([0xff, m, (body.length + 2) >> 8, (body.length + 2) & 255]), Buffer.from(body)]);
+  const parts = [Buffer.from([0xff, 0xd8]), ...extra.map(([m, text]) => seg(m, Buffer.from(text))), seg(0xdb, [0, 1, 2]),
+    seg(0xc0, [8, h >> 8, h & 255, w >> 8, w & 255, 1, 1, 0x11, 0])];
+  for (let i = 0; i < scans; i++) parts.push(seg(0xda, [1, 1, 0, 0, 63, 0]), Buffer.from(scan));
+  return Buffer.concat([...parts, Buffer.from([0xff, 0xd9]), Buffer.from(tail)]);
+}
+const photoBody = (o = {}) => ({ full: jpeg(o).toString('base64'), thumb: jpeg().toString('base64') });
+
+test('Fotos sind Opt-in und je Haushalt getrennt', async () => {
+  const { one, two, main } = await twoInHousehold('kira', 'luis');
+  const stranger = client();
+  await stranger.post('/api/register', { name: 'mona', password: 'geheim123' });
+  const path = `/api/dishes/${main}/photo`;
+  assert.equal((await one.get('/api/me')).user.settings.photos, false);
+  assert.equal((await one.put(path, photoBody())).status, 403);
+  assert.equal((await one.del(path)).status, 403);
+  assert.equal((await one.patch('/api/me', { settings: { photos: 'ja' } })).user.settings.photos, false);
+  assert.equal((await one.patch('/api/me', { settings: { photos: true } })).user.settings.photos, true);
+
+  const { photo } = await one.put(path, photoBody());
+  assert.match(photo, /^[0-9a-f]{16}$/);
+  const res = await two.raw(`${path}/${photo}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('content-type'), 'image/jpeg');
+  assert.match(res.headers.get('cache-control'), /private/);
+  assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal((await two.raw(`${path}/${photo}?size=thumb`)).status, 200);
+  assert.equal((await stranger.raw(`${path}/${photo}`)).status, 404);
+  assert.equal((await client().raw(`${path}/${photo}`)).status, 401);
+
+  const revIn = async who => (await who.get('/api/dishes')).dishes.find(d => d.id === main).photo;
+  assert.equal(await revIn(two), photo);
+  assert.equal(await revIn(stranger), null); // dasselbe mitgelieferte Gericht, anderer Haushalt
+  await stranger.patch('/api/me', { settings: { photos: true } });
+  const theirs = (await stranger.put(path, photoBody({ w: 80 }))).photo;
+  assert.notEqual(theirs, photo);
+  assert.equal(await revIn(one), photo);
+
+  const next = (await one.put(path, photoBody({ w: 96 }))).photo; // ersetzen: neue Adresse, alte ungültig
+  assert.notEqual(next, photo);
+  assert.equal((await one.raw(`${path}/${photo}`)).status, 404);
+  assert.equal((await one.del(path)).photo, null);
+  assert.equal(await revIn(two), null);
+  assert.equal(await revIn(stranger), theirs);
+
+  const secret = (await stranger.post('/api/dishes', { name: 'Geheimrezept', protein: 1, kcal: 1 })).dish.id;
+  assert.equal((await one.put(`/api/dishes/${secret}/photo`, photoBody())).status, 404);
+  assert.equal((await one.put(`/api/dishes/${secret}/photo`, { copyFrom: main })).status, 404);
+});
+
+test('Fotos: Metadaten und Anhängsel fallen weg, Ungültiges wird abgelehnt', async () => {
+  const nina = client();
+  await nina.post('/api/register', { name: 'nina', password: 'geheim123' });
+  await nina.patch('/api/me', { settings: { photos: true } });
+  const path = `/api/dishes/${(await nina.get('/api/dishes')).dishes[0].id}/photo`;
+  const dirty = { extra: [[0xe1, 'Exif GPS 52.52,13.40'], [0xed, 'IPTC Straße 5'], [0xfe, 'geheimer Kommentar']], scans: 3, tail: 'angehängtes Video' };
+  const { photo } = await nina.put(path, photoBody(dirty));
+  assert.deepEqual(Buffer.from(await (await nina.raw(`${path}/${photo}`)).arrayBuffer()), jpeg({ scans: 3 }));
+  const status = async full => (await nina.put(path, { full, thumb: photoBody().thumb })).status;
+  assert.equal(await status(Buffer.from('<svg onload=alert(1)>').toString('base64')), 400);
+  assert.equal(await status(jpeg({ w: 1601 }).toString('base64')), 400);
+  assert.equal(await status(jpeg({ h: 0 }).toString('base64')), 400);
+  assert.equal(await status(jpeg({ scans: 33 }).toString('base64')), 400);
+  assert.equal(await status(jpeg().subarray(0, -2).toString('base64')), 400);
+  assert.equal(await status(Buffer.alloc(510_000, 1).toString('base64')), 400);
+  assert.equal(await status(42), 400);
+  assert.equal((await nina.put(path, { full: photoBody().full, thumb: jpeg({ w: 241 }).toString('base64') })).status, 400);
+});
+
+test('Fotos: Kopieren, Umzug und Löschen', async () => {
+  const { one, two, breakfast, main, O } = await twoInHousehold('olga', 'paul');
+  for (const c of [one, two]) await c.patch('/api/me', { settings: { photos: true } });
+  await one.put(`/api/dishes/${main}/photo`, photoBody());
+  await two.put(`/api/dishes/${breakfast}/photo`, photoBody());
+  const mk = async who => (await who.post('/api/dishes', { name: 'Kopie', protein: 1, kcal: 1 })).dish.id;
+  const copy = await mk(two);
+  assert.match((await two.put(`/api/dishes/${copy}/photo`, { copyFrom: main })).photo, /^[0-9a-f]{16}$/);
+
+  // Das Foto kommt auch mit der Mahlzeit
+  const meal = (await one.post('/api/meals', { date: today, slot: 'dinner', dishId: main, eaters: [{ userId: O.user.id, portions: 1 }] })).meal;
+  assert.match(meal.dish.photo, /^[0-9a-f]{16}$/);
+
+  await two.post('/api/household/leave');
+  const after = (await two.get('/api/dishes')).dishes;
+  const photoOf = id => after.find(d => d.id === id).photo;
+  assert.ok(photoOf(breakfast));      // selbst hochgeladen
+  assert.equal(photoOf(main), null);  // von der anderen Person
+  assert.equal(photoOf(copy), null);  // auch als Kopie nicht
+
+  const count = id => server.db.get('SELECT COUNT(*) AS n FROM dish_photos WHERE dish_id = ?', id).n;
+  const unused = await mk(one);
+  await one.put(`/api/dishes/${unused}/photo`, photoBody());
+  await one.del(`/api/dishes/${unused}`);
+  assert.equal(count(unused), 0);
+  const used = await mk(one);
+  await one.put(`/api/dishes/${used}/photo`, photoBody());
+  await one.post('/api/meals', { date: today, slot: 'dinner', dishId: used, eaters: [{ userId: O.user.id, portions: 1 }] });
+  await one.del(`/api/dishes/${used}`);
+  assert.equal(count(used), 1);
 });

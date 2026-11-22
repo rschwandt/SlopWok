@@ -226,6 +226,31 @@ textarea.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-siz
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); z-index: 60; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 0.92rem; max-width: min(90vw, 480px); text-align: center; }
 .toast.bad { background: var(--danger); color: var(--surface); }
 
+/* Fotos zu Gerichten (Opt-in): Miniatur in Zeilen, Banner bündig oben in der Karte */
+.thumb { width: 56px; height: 56px; flex-shrink: 0; border-radius: 12px; border: 1px solid var(--line); object-fit: cover; background: var(--surface-2); }
+.photo { position: relative; flex-shrink: 0; margin: 0; overflow: hidden; border-radius: var(--r); background: var(--surface-2); }
+.photo img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+.card > .photo, .meal > .photo { margin: -14px -14px 2px; border-radius: 0; border-top-left-radius: calc(var(--r) - 1px); border-top-right-radius: calc(var(--r) - 1px); }
+.meal.dinner > .photo { border-top-left-radius: calc(var(--r) - 4px); border-top-right-radius: calc(var(--r) - 4px); }
+.photo-tools { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px; }
+.photo-tools .linkbtn { background: var(--surface); }
+.photo.broken { min-height: 52px; }
+.photo.broken:not(:has(.photo-tools)) { display: none; }
+label.pick { position: relative; cursor: pointer; }
+label.pick input { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; opacity: 0; overflow: hidden; pointer-events: none; }
+label.pick:focus-within { outline: 2.5px solid var(--primary); outline-offset: 2px; }
+label.pick.busy { color: var(--muted); cursor: default; }
+
+/* Optionen */
+.opt { display: flex; align-items: center; gap: 12px; width: 100%; padding: 0; border: 0; background: none; text-align: left; }
+.opt-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.opt-text small { color: var(--muted); }
+.switch { position: relative; flex-shrink: 0; width: 48px; height: 28px; border-radius: 999px; border: 1.5px solid var(--muted); background: var(--surface-2); }
+.switch::after { content: ""; position: absolute; top: 3.5px; left: 4px; width: 18px; height: 18px; border-radius: 50%; background: var(--muted); }
+.opt[aria-checked="true"] .switch { background: var(--primary); border-color: var(--primary-ink); }
+.opt[aria-checked="true"] .switch::after { left: 23px; background: var(--on-primary); }
+@media (prefers-reduced-motion: no-preference) { .switch::after { transition: left .15s ease; } }
+
 /* Woki (public/js/woki.js): Farben je Rolle, Linien mit -s */
 .woki { display: block; flex-shrink: 0; }
 .wk-body { fill: var(--primary); } .wk-body-s { stroke: var(--primary); }
