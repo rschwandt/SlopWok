@@ -44,10 +44,11 @@ export function loadMeals(db, where, params) {
     byId.get(e.meal_id).eaters.push({ userId: e.user_id, portions: e.portions, eaten: !!e.eaten, actual: e.actual ? JSON.parse(e.actual) : null });
   // Reste, die aus diesen Mahlzeiten später gegessen werden, zählen zur Kochmenge der Quelle
   for (const r of db.all(`SELECT m.leftover_of AS src, SUM(e.portions) AS p FROM meals m JOIN meal_eaters e ON e.meal_id = m.id
-                          WHERE m.leftover_of IN (${marks}) GROUP BY m.leftover_of`, ...ids))
+                          WHERE m.leftover_of IN (${marks}) AND e.actual IS NULL GROUP BY m.leftover_of`, ...ids))
     byId.get(r.src).leftoverPortions = r.p || 0;
-  // Wer stattdessen etwas anderes gegessen und seine Portion an den Rest für morgen gegeben hat, zählt nur dort
-  for (const m of meals) m.cook = m.leftoverOf ? 0 : m.eaters.reduce((a, e) => a + e.portions - (e.actual?.kept || 0), 0) + m.leftoverPortions;
+  // Gekocht und eingekauft wird nur für die, die wirklich mitessen. Wer anders isst (auswärts, etwas anderes),
+  // zählt nicht; eine an den Rest für morgen gegebene Portion zählt über leftoverPortions.
+  for (const m of meals) m.cook = m.leftoverOf ? 0 : m.eaters.reduce((a, e) => a + (e.actual ? 0 : e.portions), 0) + m.leftoverPortions;
   return meals;
 }
 export const mealsInRange = (db, hhId, from, to) => loadMeals(db, 'm.household_id = ? AND m.date BETWEEN ? AND ?', [hhId, from, to]);
@@ -108,10 +109,11 @@ export function splitCents(total, weights) {
   return out;
 }
 
-// Geplante Kalorien pro Person im Zeitraum – Maß für „wer isst wie viel mit".
+// Geplante Kalorien pro Person im Zeitraum – Maß für „wer isst wie viel mit". Zählt nur, was eingekauft wird:
+// Gerichte, die man wirklich mitisst, keine freien Einträge (z. B. auswärts) und nichts, wofür man anders isst.
 export function kcalWeights(meals, memberIds) {
   const w = Object.fromEntries(memberIds.map(id => [id, 0]));
-  for (const m of meals) for (const e of m.eaters) if (e.userId in w) w[e.userId] += m.kcal * e.portions;
+  for (const m of meals) if (m.dish) for (const e of m.eaters) if (e.userId in w && !e.actual) w[e.userId] += m.kcal * e.portions;
   return w;
 }
 

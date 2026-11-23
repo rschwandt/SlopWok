@@ -110,6 +110,10 @@ a.linkbtn { color: var(--primary-ink); }
 .who { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
 .slot-add { border: 1.5px dashed var(--line); background: transparent; border-radius: var(--r); padding: 12px 14px; display: flex; align-items: center; gap: 10px; color: var(--muted); font-weight: 600; width: 100%; text-align: left; min-height: 48px; }
 .slot-add svg { width: 18px; height: 18px; }
+.slot-add-row { display: flex; gap: 8px; }
+.slot-add-row .slot-add:first-child { flex: 1; }
+.slot-add.out { width: auto; flex-shrink: 0; }
+.check:disabled { opacity: .35; border-style: dashed; cursor: not-allowed; }
 .row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); min-width: 0; }
 .row:last-child { border-bottom: 0; }
 .row > .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; }

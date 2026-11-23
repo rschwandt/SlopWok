@@ -399,7 +399,7 @@ test('Anders gegessen: Schätzung zählt nur für die eigene Person, Portion kan
   await two.patch(`/api/meals/${din.id}`, { cookId: T.user.id });
   r = (await one.put(`/api/meals/${din.id}/actual`, { name: 'Pizza', protein: 30, kcal: 1100 })).meal;
   assert.equal(r.eaters.find(e => e.userId === O.user.id).actual.name, 'Pizza');
-  assert.equal(r.cook, cookBefore);
+  assert.equal(r.cook, cookBefore - 1); // wer anders isst, für den wird nicht gekocht
   rest = (await one.get(`/api/meals?from=${next}&to=${next}`)).meals.find(m => m.leftoverOf === din.id);
   assert.equal(rest, undefined);
 
@@ -414,6 +414,39 @@ test('Anders gegessen: Schätzung zählt nur für die eigene Person, Portion kan
   assert.equal(lunch.eaters[0].eaten, true);
   assert.equal((await prog(one, O)).eatP, 28);
   assert.equal((await one.put(`/api/meals/${lunch.id}/actual`, { name: 'x', protein: 1, kcal: 1 })).status, 400);
+});
+
+test('Kommende Tage: nicht abhakbar, anders essen und auswärts kommen nicht auf den Einkaufszettel', async () => {
+  const { one, two, O, T, breakfast, main, eat } = await twoInHousehold('tara', 'udo');
+  const d = L.addDays(today, 2);
+  const shop = async () => (await one.get('/api/shopping?date=' + d));
+  const din = (await one.post('/api/meals', { date: d, slot: 'dinner', dishId: main, eaters: [eat(O), eat(T)] })).meal;
+  const own = (await two.post('/api/meals', { date: d, slot: 'breakfast', dishId: breakfast, eaters: [eat(T)], eaten: true })).meal;
+  assert.equal(own.eaters[0].eaten, false); // „gleich abgehakt“ gilt nicht für die Zukunft
+  assert.equal((await one.post(`/api/meals/${din.id}/eaten`, { eaten: true })).status, 400);
+  assert.equal((await one.post(`/api/meals/${din.id}/eaten`, { eaten: false })).status, 200);
+  const short = (await one.get('/api/dishes')).dishes.find(x => x.id === main).name.split(/ mit | vom /)[0];
+  const need = async () => Object.fromEntries((await shop()).items.filter(i => i.why.every(w => w.startsWith(short))).map(i => [i.key, i.need]));
+  const before = await need();
+
+  // Udo isst an dem Abend auswärts: im Voraus eingetragen, nicht abgehakt, nur noch eine Portion wird gekauft
+  const r = (await two.put(`/api/meals/${din.id}/actual`, { name: 'Pizza', protein: 30, kcal: 1100 })).meal;
+  assert.equal(r.eaters.find(e => e.userId === T.user.id).eaten, false);
+  assert.equal(r.cook, 1);
+  const after = await need();
+  assert.ok(Object.keys(before).length);
+  for (const k of Object.keys(before)) assert.ok(Math.abs(after[k] - before[k] / 2) < 0.02, k);
+
+  // Isst niemand mehr mit, verschwindet das Gericht vom Zettel; ein freier Eintrag „auswärts“ kommt nie drauf
+  await one.put(`/api/meals/${din.id}/actual`, { name: 'Döner', protein: 40, kcal: 750 });
+  const out = (await one.post('/api/meals', { date: d, slot: 'lunch', custom: { name: 'Kantine', protein: 30, kcal: 800 }, eaters: [eat(O)], eaten: true })).meal;
+  assert.equal(out.eaters[0].eaten, false);
+  assert.ok(!(await shop()).items.some(i => i.why.some(w => w.startsWith(short))));
+  // Kostenverteilung: wer nur auswärts isst oder anders isst, trägt nichts zum Einkauf bei
+  const meals = (await one.get(`/api/meals?from=${d}&to=${d}`)).meals;
+  const mealsT = (await two.get(`/api/meals?from=${d}&to=${d}`)).meals;
+  assert.equal(L.kcalWeights(meals, [O.user.id])[O.user.id], 0);
+  assert.ok(L.kcalWeights(mealsT, [T.user.id])[T.user.id] > 0); // Udos eigenes Frühstück zählt
 });
 
 // Kein dekodierbares Bild, aber ein korrekt aufgebautes JPEG: mehr prüft der Server nicht

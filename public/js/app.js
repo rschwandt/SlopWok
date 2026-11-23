@@ -101,8 +101,14 @@ document.addEventListener('click', e => {
   if (!el) return;
   const a = el.dataset.act, sh = currentSheet();
   const fn = (sh && sheetEl.contains(el) && sh.actions && sh.actions[a]) || globalActions[a] || (S.me && VIEWS[S.view].actions[a]);
-  if (fn) Promise.resolve(fn(el, e)).catch(fail);
+  if (!fn) return;
+  // Dieselbe Aktion läuft schon (z. B. mehrfach auf „Einplanen" getippt, während das Netz hängt): nicht noch einmal senden
+  const key = a + '|' + (el.dataset.id || '');
+  if (running.has(key)) return;
+  running.add(key);
+  Promise.resolve().then(() => fn(el, e)).catch(fail).finally(() => running.delete(key));
 });
+const running = new Set();
 document.addEventListener('submit', async e => {
   const form = e.target.closest('form[data-form]');
   if (!form) return;

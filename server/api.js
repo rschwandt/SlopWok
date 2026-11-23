@@ -398,7 +398,7 @@ export function createApi(db, cfg = {}) {
         c.hh.id, d, slot, dishId, custom, cookId, c.user.id, Date.now());
       setEaters(mid, eaters);
       // Nachgetragen: gleich als gegessen abhaken (nur für sich selbst)
-      if (b.eaten) db.run('UPDATE meal_eaters SET eaten = 1 WHERE meal_id = ? AND user_id = ?', mid, c.user.id);
+      if (b.eaten && d <= c.today) db.run('UPDATE meal_eaters SET eaten = 1 WHERE meal_id = ? AND user_id = ?', mid, c.user.id);
       setLeftover(c, { id: mid, date: d, dish_id: dishId }, left);
       return mid;
     });
@@ -433,6 +433,7 @@ export function createApi(db, cfg = {}) {
         const shift = L.diffDays(m.date, date(b.date));
         m.date = b.date;
         db.run('UPDATE meals SET date = ? WHERE id = ?', m.date, m.id);
+        if (m.date > c.today) db.run('UPDATE meal_eaters SET eaten = 0 WHERE meal_id = ?', m.id); // in die Zukunft verschoben: noch nicht gegessen
         if (shift) for (const k of db.all('SELECT id, date FROM meals WHERE leftover_of = ?', m.id)) db.run('UPDATE meals SET date = ? WHERE id = ?', L.addDays(k.date, shift), k.id);
       }
       if (slot !== m.slot) {
@@ -484,6 +485,7 @@ export function createApi(db, cfg = {}) {
   });
   route('POST', '/api/meals/:id/eaten', c => {
     const m = hhMeal(c, c.params.id);
+    if (c.body.eaten && m.date > c.today) bad('Abhaken geht erst an dem Tag, an dem du isst.');
     const r = db.tx(() => {
       if (!c.body.eaten) clearActual(m, c.user.id); // nicht gegessen: auch nichts anderes stattdessen
       return db.run('UPDATE meal_eaters SET eaten = ? WHERE meal_id = ? AND user_id = ?', c.body.eaten ? 1 : 0, m.id, c.user.id);
@@ -493,8 +495,9 @@ export function createApi(db, cfg = {}) {
   });
 
   // ---------- Anders gegessen ----------
-  // Statt der geplanten Mahlzeit etwas anderes gegessen, Nährwerte geschätzt. Das gilt nur für die eigene Person:
-  // Plan, Kochmenge (außer bei weitergegebener Portion), Einkauf und Kasse der anderen bleiben, wie sie sind.
+  // Statt der geplanten Mahlzeit etwas anderes gegessen (oder für einen kommenden Tag: vor, anders zu essen),
+  // Nährwerte geschätzt. Das gilt nur für die eigene Person: die eigene Portion wird nicht mehr gekocht und nicht
+  // eingekauft (außer sie geht an den Rest für morgen), für die anderen bleibt der Plan, wie er ist.
   function clearActual(m, userId) {
     const e = db.get('SELECT actual FROM meal_eaters WHERE meal_id = ? AND user_id = ?', m.id, userId);
     const kept = e?.actual ? JSON.parse(e.actual).kept || 0 : 0;
@@ -530,7 +533,8 @@ export function createApi(db, cfg = {}) {
         else db.run('INSERT INTO meal_eaters (meal_id, user_id, portions) VALUES (?, ?, ?)', kid, c.user.id, kept);
       }
       const actual = { name: text(b.name, 80, 1), protein: Math.round(p), kcal: Math.round(k), kept };
-      db.run('UPDATE meal_eaters SET actual = ?, eaten = 1 WHERE meal_id = ? AND user_id = ?', JSON.stringify(actual), m.id, c.user.id);
+      // Im Voraus geplant: abgehakt wird erst am Tag selbst
+      db.run('UPDATE meal_eaters SET actual = ?, eaten = ? WHERE meal_id = ? AND user_id = ?', JSON.stringify(actual), m.date <= c.today ? 1 : 0, m.id, c.user.id);
     });
     return { meal: oneMeal(c, m.id) };
   });

@@ -29,16 +29,20 @@ function whoLine(m) {
   if (m.cookId && !m.leftoverOf) parts.push(m.cookId === myId() ? '<b>du kochst</b>' : esc(memberName(m.cookId)) + ' kocht');
   return '<div class="who">' + m.eaters.map(e => avatar(members().find(x => x.id === e.userId) || {}, 'sm')).join('') + '<span>' + parts.join(' · ') + '</span></div>';
 }
+// Abhaken geht erst am Tag selbst
+const checkBtn = m => m.date > todayISO()
+  ? '<button class="check" role="checkbox" aria-checked="false" aria-disabled="true" disabled title="Abhaken geht erst am Tag selbst" aria-label="' + esc(m.name) + ': abhaken geht erst am Tag selbst">' + ico.tick + '</button>'
+  : '<button class="check" role="checkbox" aria-checked="' + mine(m).eaten + '" aria-label="' + esc(m.name) + ' gegessen" data-act="eat" data-id="' + m.id + '">' + ico.tick + '</button>';
 function mealCard(m) {
-  const me = mine(m), done = me.eaten, d = m.dish, isOpen = !!open[m.id], alt = me.actual;
+  const me = mine(m), done = me.eaten, d = m.dish, isOpen = !!open[m.id], alt = me.actual, ahead = m.date > todayISO();
   let body = whoLine(m);
-  if (alt) body += '<div class="note alt">' + ico.plate + '<span>Statt <b>' + esc(m.name) + '</b> gegessen, geschätzt.' + (alt.kept ? ' Deine Portion steht morgen als Rest im Plan.' : '') + '</span></div>';
+  if (alt) body += '<div class="note alt">' + ico.plate + '<span>Statt <b>' + esc(m.name) + '</b> ' + (ahead ? 'isst du anders, geschätzt. Für dich wird nichts gekocht und eingekauft.' : 'gegessen, geschätzt.') + (alt.kept ? ' Deine Portion steht morgen als Rest im Plan.' : '') + '</span></div>';
   if (m.leftoverOf) body += '<div class="note">' + portions(me.portions) + ' vom Vortag aufwärmen. Nichts einzukaufen.</div>';
   else if (d) {
     if (m.slot === 'dinner' || isOpen) {
       if (m.cook !== 1) {
         // Eine an den Rest weitergegebene Portion zählt dort, nicht heute Abend
-        const bits = m.eaters.filter(e => e.portions - (e.actual?.kept || 0) > 0).map(e => (e.userId === myId() ? 'du' : esc(memberName(e.userId))) + ' ' + fmtCount(e.portions - (e.actual?.kept || 0)));
+        const bits = m.eaters.filter(e => !e.actual).map(e => (e.userId === myId() ? 'du' : esc(memberName(e.userId))) + ' ' + fmtCount(e.portions));
         if (m.leftoverPortions) bits.push('Rest für morgen ' + fmtCount(m.leftoverPortions));
         body += '<div class="note"><b>Kochmenge ' + fmtCount(m.cook) + '× Rezept</b> (' + bits.join(', ') + '). Die Mengen unten sind schon hochgerechnet.</div>';
       }
@@ -54,11 +58,11 @@ function mealCard(m) {
   if (d && !m.leftoverOf) actions += '<button class="linkbtn" data-act="recipe" data-id="' + m.id + '" aria-expanded="' + isOpen + '">' + ico.book + (isOpen ? 'Zubereitung ausblenden' : 'Zubereitung') + '</button>';
   if (m.auto && d && !m.leftoverOf) actions += '<button class="linkbtn" data-act="swapMeal" data-id="' + m.id + '">' + ico.swap + 'Tauschen</button>';
   if (d && !m.leftoverOf && isOpen) actions += addPhotoHtml(d);
-  if (!m.custom && m.date <= todayISO()) actions += '<button class="linkbtn" data-act="otherMeal" data-id="' + m.id + '">' + ico.plate + (alt ? 'Schätzung ändern' : 'Anders gegessen') + '</button>';
+  if (!m.custom) actions += '<button class="linkbtn" data-act="otherMeal" data-id="' + m.id + '">' + ico.plate + (alt ? 'Schätzung ändern' : ahead ? 'Anders essen' : 'Anders gegessen') + '</button>';
   actions += '<button class="linkbtn" data-act="editMeal" data-id="' + m.id + '">' + ico.edit + 'Ändern</button>';
   return '<article class="meal' + (m.slot === 'dinner' ? ' dinner' : '') + (done ? ' done' : '') + (alt ? ' alt' : '') + '">' +
     (showBanner ? bannerHtml(d, { edit: true }) : '') +
-    '<div class="meal-top"><button class="check" role="checkbox" aria-checked="' + done + '" aria-label="' + esc(m.name) + ' gegessen" data-act="eat" data-id="' + m.id + '">' + ico.tick + '</button>' +
+    '<div class="meal-top">' + checkBtn(m) +
     '<div><span class="eyebrow">' + SLOT_LABEL[m.slot] + (m.leftoverOf ? '' : m.swiped && !m.pinned ? (m.eaters.length > 1 ? ' · Match' : ' · Geswipet') : m.auto ? ' · Vorschlag' : '') + '</span><h3>' + (alt ? esc(alt.name) : (m.leftoverOf ? 'Rest: ' : '') + esc(m.name)) + '</h3>' +
     pills(mealP(m, me), mealK(m, me), m.slot === 'dinner' && d && !m.leftoverOf && !alt ? d.minutes : 0) + '</div>' +
     (showBanner ? '' : thumbHtml(d)) + '</div>' +
@@ -106,11 +110,12 @@ function render() {
   for (const slot of SLOTS) {
     const list = my.filter(m => m.slot === slot);
     h += list.map(mealCard).join('');
-    if (!list.length) h += '<button class="slot-add" data-act="addMeal" data-slot="' + slot + '">' + ico.plus + SLOT_LABEL[slot] + ' planen</button>';
+    if (!list.length) h += '<div class="slot-add-row"><button class="slot-add" data-act="addMeal" data-slot="' + slot + '">' + ico.plus + SLOT_LABEL[slot] + ' planen</button>' +
+      '<button class="slot-add out" data-act="eatOut" data-slot="' + slot + '">' + ico.plate + 'Auswärts</button></div>';
   }
   const extras = my.filter(m => m.slot === 'extra');
   h += '<article class="meal"><div><span class="eyebrow">Extras</span><h3>Was sonst noch dazukam</h3></div><div class="rows">' +
-    extras.map(m => '<div class="row"><button class="check" role="checkbox" aria-checked="' + mine(m).eaten + '" aria-label="' + esc(m.name) + ' gegessen" data-act="eat" data-id="' + m.id + '">' + ico.tick + '</button>' +
+    extras.map(m => '<div class="row">' + checkBtn(m) +
       '<span class="grow"><span class="nm">' + esc(m.name) + '</span></span><span class="pill">+' + nf(m.protein) + ' g</span><span class="pill k">+' + nf(m.kcal) + '</span>' +
       '<button class="addbtn x" data-act="delMeal" data-id="' + m.id + '" aria-label="' + esc(m.name) + ' entfernen">' + ico.close + '</button></div>').join('') +
     '</div><div class="actions"><button class="linkbtn" data-act="addExtra">' + ico.plus + 'Extra eintragen</button></div></article>';
@@ -253,6 +258,7 @@ const actions = {
   photoDel: el => removePhoto(el, () => S.render(), () => S.refresh()),
   eat: async el => {
     const m = find(el.dataset.id), e = mine(m);
+    if (m.date > todayISO()) return toast('Abhaken geht erst am Tag selbst.', true);
     e.eaten = !e.eaten; S.render(); // sofort zeigen, Server bestätigt
     try { put((await post('/api/meals/' + m.id + '/eaten', { eaten: e.eaten })).meal); } catch (err) { e.eaten = !e.eaten; S.render(); throw err; }
   },
@@ -273,6 +279,8 @@ const actions = {
     put(r.meal); toast('Du isst mit');
   },
   addExtra: () => openExtraSheet(),
+  // Auswärts oder sonst anders essen: freier Eintrag mit geschätzten Werten, kommt nicht auf den Einkaufszettel
+  eatOut: el => openEstimateSheet({ date: S.date, slots: [el.dataset.slot], out: true, done: () => S.refresh() }),
   otherMeal: el => openEstimateSheet({ meal: find(el.dataset.id), done: async meal => { put(meal); await S.refresh(); } })
 };
 

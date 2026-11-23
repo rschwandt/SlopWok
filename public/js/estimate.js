@@ -13,8 +13,10 @@ const fmtF = f => '×' + String(f).replace('.', ',');
 // slots: für neue Einträge die Mahlzeiten, unter denen er landen kann (das erste ist vorausgewählt)
 // done: wird nach dem Speichern mit der Antwort des Servers aufgerufen
 // quick: Gerichte, die man mit einem Tipp als Extra einträgt (Tag „Extra“, z. B. Proteinshake)
-export function openEstimateSheet({ meal, date, slots = ['extra'], quick = [], done }) {
+// out: neuer Eintrag „Auswärts“ für eine Mahlzeit (abgehakt wird er erst, wenn der Tag vorbei ist bzw. von Hand)
+export function openEstimateSheet({ meal, date, slots = ['extra'], quick = [], out = false, done }) {
   const me = meal && meal.eaters.find(e => e.userId === S.me.user.id);
+  const day = meal ? meal.date : date || todayISO(), ahead = day > todayISO(), later = ahead || (out && day === todayISO());
   const canKeep = !!(meal && meal.slot === 'dinner' && !meal.leftoverOf && meal.dish);
   const st = { step: 'pick', q: '', group: GROUPS[0], src: '', name: '', p: 0, k: 0, f: 1, keep: false, slot: slots[0] };
   if (me && me.actual) Object.assign(st, { step: 'adjust', src: 'Deine Schätzung', name: me.actual.name, p: me.actual.protein, k: me.actual.kcal, keep: !!me.actual.kept });
@@ -35,11 +37,12 @@ export function openEstimateSheet({ meal, date, slots = ['extra'], quick = [], d
 
   const render = () => {
     let h = '';
-    if (meal) h += '<p class="note">Statt <b>' + esc(meal.name) + '</b>. Das gilt nur für dich' + (meal.eaters.length > 1 ? ', für die anderen bleibt der Plan, wie er ist' : '') + '.</p>';
+    if (meal) h += '<p class="note">Statt <b>' + esc(meal.name) + '</b>. Das gilt nur für dich' + (meal.eaters.length > 1 ? ', für die anderen bleibt der Plan, wie er ist' : '') + '. Deine Portion wird nicht gekocht und nicht eingekauft.</p>';
+    else if (out) h += '<p class="note">Du isst auswärts oder bringst dir etwas mit. Dafür wird nichts eingekauft, die Werte zählen für dein Tagesziel.</p>';
     if (st.step === 'pick') {
       if (meal && me && !meal.custom) h += '<div class="card"><div class="rows">' + row('plan', '', 'Wie geplant, nur mehr oder weniger', 'Du hattest ' + nf(me.portions) + ' Portion' + (me.portions === 1 ? '' : 'en') + ' geplant', meal.protein * me.portions, meal.kcal * me.portions) + '</div></div>';
       if (!meal && quick.length) h += '<div class="card"><span class="eyebrow">Schnell</span><div class="rows">' + quick.map(d => row('quick', d.id, d.name, '', d.protein, d.kcal)).join('') + '</div></div>';
-      h += '<div class="field"><input class="input" type="search" placeholder="Was war es? z. B. Döner, Pizza, Curry" data-input="q" value="' + esc(st.q) + '" aria-label="Gericht suchen"></div>' +
+      h += '<div class="field"><input class="input" type="search" placeholder="' + (later ? 'Was gibt es?' : 'Was war es?') + ' z. B. Döner, Pizza, Curry" data-input="q" value="' + esc(st.q) + '" aria-label="Gericht suchen"></div>' +
         (st.q ? '' : '<div class="chips">' + GROUPS.map(g => chip(g, st.group === g, 'data-act="group" data-v="' + g + '"')).join('') + chip('Eure Gerichte', st.group === 'own', 'data-act="group" data-v="own"') + '</div>') +
         '<div class="card"><div class="rows" id="estlist">' + list() + '</div></div>' +
         '<span class="note">Richtwerte für eine normale vegane Portion, eher großzügig: Auswärts wird fast immer zu wenig geschätzt.</span>' +
@@ -47,7 +50,7 @@ export function openEstimateSheet({ meal, date, slots = ['extra'], quick = [], d
       return h;
     }
     const v = vals();
-    h += '<div class="card"><div class="field"><label for="e-name">Was war es?</label><input id="e-name" data-input="name" maxlength="80" value="' + esc(st.name) + '" placeholder="z. B. Döner beim Imbiss"></div>' +
+    h += '<div class="card"><div class="field"><label for="e-name">' + (later ? 'Was gibt es?' : 'Was war es?') + '</label><input id="e-name" data-input="name" maxlength="80" value="' + esc(st.name) + '" placeholder="z. B. Döner beim Imbiss"></div>' +
       (st.src ? '<span class="note">Ausgangswert: ' + esc(st.src) + '</span>' : '') +
       '<div class="actions"><button class="linkbtn" data-act="repick">Andere Vorlage</button></div></div>';
     if (st.p || st.k) h += '<div class="card"><div class="split"><span class="lbl">Größe</span><b id="e-size">' + esc(sizeLabel()) + '</b></div>' +
@@ -56,17 +59,17 @@ export function openEstimateSheet({ meal, date, slots = ['extra'], quick = [], d
     h += '<div class="row2"><div class="field"><label for="e-p">Protein (g)</label><input id="e-p" type="number" inputmode="numeric" min="0" max="500" data-input="p" value="' + (st.p || st.k ? v.p : '') + '"></div>' +
       '<div class="field"><label for="e-k">Kalorien</label><input id="e-k" type="number" inputmode="numeric" min="0" max="10000" data-input="k" value="' + (st.p || st.k ? v.k : '') + '"></div></div>';
     if (canKeep) h += '<div class="field"><span class="lbl">Deine Portion vom warmen Gericht</span><div class="chips">' +
-      chip('Übrig, isst jemand anderes oder niemand', !st.keep, 'data-act="keep" data-v="0"') + chip('Esse ich morgen mittags', st.keep, 'data-act="keep" data-v="1"') + '</div>' +
-      (st.keep ? '<span class="note">Sie steht morgen als Rest im Plan. Gekocht wird gleich viel.</span>' : '') + '</div>';
+      chip('Wird nicht gekocht', !st.keep, 'data-act="keep" data-v="0"') + chip('Esse ich morgen mittags', st.keep, 'data-act="keep" data-v="1"') + '</div>' +
+      (st.keep ? '<span class="note">Sie wird mitgekocht und steht morgen als Rest im Plan.</span>' : '') + '</div>';
     if (!meal && slots.length > 1) h += '<div class="field"><label for="e-slot">Eintragen als</label><select id="e-slot" data-change="slot">' +
       slots.map(s => '<option value="' + s + '"' + (s === st.slot ? ' selected' : '') + '>' + SLOT_LABEL[s] + '</option>').join('') + '</select></div>';
-    h += '<button class="btn wide" data-act="save">' + (meal ? 'Als gegessen eintragen' : 'Eintragen') + '</button>';
+    h += '<button class="btn wide" data-act="save">' + (meal && !ahead ? 'Als gegessen eintragen' : 'Eintragen') + '</button>';
     if (me && me.actual) h += '<div class="actions"><button class="linkbtn" data-act="undo">' + ico.undo + 'Doch wie geplant</button></div>';
     return h;
   };
 
   openSheet({
-    title: meal ? 'Anders gegessen' : 'Extra eintragen',
+    title: meal ? (ahead ? 'Anders essen' : 'Anders gegessen') : out ? 'Auswärts essen' : 'Extra eintragen',
     render,
     // Regler und Zahlen ändern nur die Felder, damit Tippen und Ziehen nicht unterbrochen werden
     onInput: el => {
@@ -101,7 +104,7 @@ export function openEstimateSheet({ meal, date, slots = ['extra'], quick = [], d
         if (!(v.p > 0 || v.k > 0)) return toast('Wähle eine Vorlage oder trag Werte ein.', true);
         const r = meal
           ? await put('/api/meals/' + meal.id + '/actual', { name, protein: v.p, kcal: v.k, keep: st.keep })
-          : await post('/api/meals', { date: date || todayISO(), slot: st.slot, custom: { name, protein: v.p, kcal: v.k }, eaters: [{ userId: S.me.user.id, portions: 1 }], eaten: true });
+          : await post('/api/meals', { date: day, slot: st.slot, custom: { name, protein: v.p, kcal: v.k }, eaters: [{ userId: S.me.user.id, portions: 1 }], eaten: !later });
         closeSheet(); toast('Eingetragen'); done && done(r.meal);
       }
     }
