@@ -4,6 +4,7 @@ import { S, get, post, patch, del, mealP, mealK, esc, ico, nf, pills, head, chip
 import { SLOTS, SLOT_LABEL } from '/shared/dish.js';
 import { woki } from './woki.js';
 import { openEstimateSheet } from './estimate.js';
+import { setWoki, wokiHero, openWokiSheet } from './wokiui.js';
 import { hasPhoto, thumbHtml, bannerHtml, addPhotoHtml, changePhoto, removePhoto, resetPhotoConfirm } from './photo.js';
 
 let meals = [], loaded = '';
@@ -86,12 +87,14 @@ function render() {
     meter('prot', 'Protein', 'g', Math.round(planP), Math.round(eatP), g.pGoal, 'Ziel ' + g.pGoal + ' g · geplant ' + nf(planP) + ' g') +
     meter('kcal', 'Kalorien', 'kcal', Math.round(planK), Math.round(eatK), g.kGoal, 'Ziel ' + nf(g.kGoal) + ' · geplant ' + nf(planK)) + '</section>';
 
-  // Woki meldet sich: Anstupser (öffnet „Leute" und gilt dann als gelesen), alles gegessen, Feierabend ohne Plan
+  // Woki meldet sich: wie es ihm geht (wokiui.js), Anstupser (öffnet „Leute" und gilt dann als gelesen).
+  // Wer Wokis Verfassung abgeschaltet hat, bekommt wie früher „Satt und fertig“ und „Feierabend“.
   const planned = my.filter(m => m.slot !== 'extra');
   const late = isToday && loaded === date && !day.length && new Date().getHours() >= 20;
+  if (isToday && S.me.woki) h += wokiHero(S.me.woki);
   if (isToday && S.me.nudge) h += '<button class="woki-card nudge" data-act="nav" data-v="people">' + woki('nudge') + '<div><h3>Angestupst!</h3><p>' + esc(S.me.nudge.text) + '</p></div></button>';
-  if (isToday && loaded === date && planned.length && planned.every(m => mine(m).eaten)) h += wokiCard('Satt und fertig', 'Alles gegessen, was für heute geplant war. Woki macht Feierabend.');
-  else if (late) h += wokiCard('Feierabend', 'Für heute ist nichts mehr geplant. Woki ruht sich aus, morgen geht es weiter.');
+  if (!S.me.woki && isToday && loaded === date && planned.length && planned.every(m => mine(m).eaten)) h += wokiCard('Satt und fertig', 'Alles gegessen, was für heute geplant war. Woki macht Feierabend.');
+  else if (!S.me.woki && late) h += wokiCard('Feierabend', 'Für heute ist nichts mehr geplant. Woki ruht sich aus, morgen geht es weiter.');
 
   // Ab Donnerstag erinnern, solange man für die kommende Woche noch nicht geswipet hat
   if (isToday && wdOf(date) >= 3 && S.me.swipeWeek !== nextWeek(date))
@@ -129,7 +132,8 @@ function render() {
 
 async function load() {
   const date = S.date;
-  const r = await get('/api/meals?from=' + date + '&to=' + date);
+  const [r, w] = await Promise.all([get('/api/meals?from=' + date + '&to=' + date), get('/api/woki')]);
+  setWoki(w.woki);
   if (date === S.date) { meals = r.meals; loaded = date; }
 }
 const find = id => meals.find(m => m.id === +id);
@@ -260,7 +264,11 @@ const actions = {
     const m = find(el.dataset.id), e = mine(m);
     if (m.date > todayISO()) return toast('Abhaken geht erst am Tag selbst.', true);
     e.eaten = !e.eaten; S.render(); // sofort zeigen, Server bestätigt
-    try { put((await post('/api/meals/' + m.id + '/eaten', { eaten: e.eaten })).meal); } catch (err) { e.eaten = !e.eaten; S.render(); throw err; }
+    try {
+      const r = await post('/api/meals/' + m.id + '/eaten', { eaten: e.eaten });
+      setWoki(r.woki, { ate: e.eaten });
+      put(r.meal);
+    } catch (err) { e.eaten = !e.eaten; S.render(); throw err; }
   },
   swapMeal: async el => {
     const m = find(el.dataset.id);
@@ -279,6 +287,7 @@ const actions = {
     put(r.meal); toast('Du isst mit');
   },
   addExtra: () => openExtraSheet(),
+  woki: () => openWokiSheet(),
   // Auswärts oder sonst anders essen: freier Eintrag mit geschätzten Werten, kommt nicht auf den Einkaufszettel
   eatOut: el => openEstimateSheet({ date: S.date, slots: [el.dataset.slot], out: true, done: () => S.refresh() }),
   otherMeal: el => openEstimateSheet({ meal: find(el.dataset.id), done: async meal => { put(meal); await S.refresh(); } })

@@ -7,6 +7,7 @@ import { sendPush, generateVapidKeys } from './push.js';
 import { makeAuto } from './auto.js';
 import { LIMITS, readPhoto } from './photo.js';
 import { makeSwipe, nextWeek } from './swipe.js';
+import { wokiState, reminderLine } from '../shared/woki-state.js';
 
 const scrypt = promisify(crypto.scrypt);
 
@@ -95,13 +96,11 @@ export function createApi(db, cfg = {}) {
   const auto = makeAuto(db);
   const swipe = makeSwipe(db, auto);
 
-  // Benachrichtigung speichern und (ohne darauf zu warten) als Push verschicken.
-  function notify(userId, fromId, kind, msg, title) {
-    db.run('INSERT INTO notifications (user_id, from_id, kind, text, created) VALUES (?, ?, ?, ?, ?)', userId, fromId, kind, msg, Date.now());
-    db.run('DELETE FROM notifications WHERE user_id = ? AND id NOT IN (SELECT id FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 100)', userId, userId);
+  // Push an alle Geräte einer Person, ohne darauf zu warten. Abgelaufene Abos fliegen raus.
+  function pushTo(userId, payload) {
     const subs = db.all('SELECT * FROM push_subs WHERE user_id = ?', userId);
     const jobs = subs.map(async s => {
-      const r = await sendPush(s, { title: title || 'SlopWok', body: msg, tag: kind, url: kind === 'nudge' ? '/#today' : '/#people' }, vapid, subject, pushFetch);
+      const r = await sendPush(s, payload, vapid, subject, pushFetch);
       if (r === 'gone') db.run('DELETE FROM push_subs WHERE endpoint = ?', s.endpoint);
       return r;
     });
@@ -109,8 +108,51 @@ export function createApi(db, cfg = {}) {
     if (cfg.onPush) cfg.onPush(all);
     return all;
   }
+  // Benachrichtigung speichern (Neuigkeiten unter „Leute“) und als Push verschicken.
+  function notify(userId, fromId, kind, msg, title) {
+    db.run('INSERT INTO notifications (user_id, from_id, kind, text, created) VALUES (?, ?, ?, ?, ?)', userId, fromId, kind, msg, Date.now());
+    db.run('DELETE FROM notifications WHERE user_id = ? AND id NOT IN (SELECT id FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 100)', userId, userId);
+    return pushTo(userId, { title: title || 'SlopWok', body: msg, tag: kind, url: kind === 'nudge' ? '/#today' : '/#people' });
+  }
 
-  function mePayload(user) {
+  // ---------- Woki ----------
+  // Wokis Verfassung aus den letzten 7 Tagen (shared/woki-state.js). null, wenn die Person das abgeschaltet hat;
+  // force: trotzdem berechnen (für die Erinnerung).
+  function wokiOf(user, today, force = false) {
+    const s = L.userSettings(user);
+    if (!s.woki && !force) return null;
+    const pr = L.progress(db, user, L.addDays(today, -7), today);
+    return wokiState({ days: pr.days, pGoal: pr.pGoal, kGoal: pr.kGoal, goal: s.profile?.goal, since: L.isoOf(user.created), today });
+  }
+  // Datum und Minute des Tages in der Zeitzone der Person (vom Gerät gemeldet, sonst die des Servers)
+  function localNow(now, tz) {
+    let f;
+    try { f = new Intl.DateTimeFormat('en-CA', { timeZone: tz || undefined, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }); }
+    catch { f = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }); }
+    const p = Object.fromEntries(f.formatToParts(now).map(x => [x.type, x.value]));
+    return { date: p.year + '-' + p.month + '-' + p.day, minutes: +p.hour * 60 + +p.minute };
+  }
+  // Tägliche Erinnerung, läuft jede Minute (server/index.js). Höchstens eine pro Person und Tag, ab der gewählten
+  // Uhrzeit bis drei Stunden danach (nach einem Ausfall wird nichts nachts nachgeholt). Woki meldet sich nur,
+  // wenn es etwas zu sagen gibt. Erinnerungen landen nicht unter Neuigkeiten.
+  const REMIND_WINDOW = 180;
+  function remind(now = new Date()) {
+    const jobs = [];
+    for (const u of db.all('SELECT * FROM users WHERE id IN (SELECT user_id FROM push_subs)')) {
+      const s = L.userSettings(u);
+      if (!s.remind) continue;
+      const { date: day, minutes } = localNow(now, s.tz);
+      const [h, m] = s.remind.split(':').map(Number);
+      if (minutes < h * 60 + m || minutes > h * 60 + m + REMIND_WINDOW) continue;
+      if (db.get('SELECT 1 FROM woki_reminders WHERE user_id = ? AND date = ?', u.id, day)) continue;
+      db.run('INSERT INTO woki_reminders (user_id, date) VALUES (?, ?) ON CONFLICT (user_id) DO UPDATE SET date = excluded.date', u.id, day);
+      const msg = reminderLine(wokiOf(u, day, true), L.streak(db, u, day));
+      if (msg) jobs.push(pushTo(u.id, { title: 'Woki', body: msg, tag: 'woki', url: '/#today' }).then(r => ({ userId: u.id, msg, r })));
+    }
+    return Promise.all(jobs);
+  }
+
+  function mePayload(user, today) {
     const hh = db.get('SELECT * FROM households WHERE id = ?', user.household_id);
     return {
       user: { ...publicUser(user), settings: L.userSettings(user) },
@@ -119,6 +161,7 @@ export function createApi(db, cfg = {}) {
       unread: db.get('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read = 0', user.id).n,
       // jüngster ungelesener Anstupser der letzten 24 Stunden, für Woki auf „Heute"
       nudge: db.get("SELECT text, created FROM notifications WHERE user_id = ? AND kind = 'nudge' AND read = 0 AND created > ? ORDER BY id DESC LIMIT 1", user.id, Date.now() - 864e5) || null,
+      woki: wokiOf(user, today),
       vapidKey: vapid.publicKey,
       template: db.kv.get('template')?.name || null
     };
@@ -156,14 +199,14 @@ export function createApi(db, cfg = {}) {
     });
     const user = db.get('SELECT * FROM users WHERE id = ?', id);
     if (target) for (const m of membersOf(db, target.id)) if (m.id !== id) notify(m.id, id, 'household', display + ' ist eurem Haushalt beigetreten.');
-    return { ...mePayload(user), _session: startSession(user) };
+    return { ...mePayload(user, c.today), _session: startSession(user) };
   }, { open: true });
 
   route('POST', '/api/login', async c => {
     const user = db.get('SELECT * FROM users WHERE name = ?', text(c.body.name, 24));
     const ok = user && typeof c.body.password === 'string' && await checkPassword(c.body.password.slice(0, 200), user.pass);
     if (!ok) bad('Benutzername oder Passwort stimmt nicht.', 401);
-    return { ...mePayload(user), _session: startSession(user) };
+    return { ...mePayload(user, c.today), _session: startSession(user) };
   }, { open: true });
 
   route('POST', '/api/logout', c => {
@@ -172,7 +215,8 @@ export function createApi(db, cfg = {}) {
   }, { open: true });
 
   route('GET', '/api/config', () => ({ registrationCode: !!cfg.registrationCode }), { open: true });
-  route('GET', '/api/me', c => mePayload(c.user));
+  route('GET', '/api/me', c => mePayload(c.user, c.today));
+  route('GET', '/api/woki', c => ({ woki: wokiOf(c.user, c.today) }));
 
   route('PATCH', '/api/me', async c => {
     const b = c.body, s = L.userSettings(c.user);
@@ -188,6 +232,9 @@ export function createApi(db, cfg = {}) {
       if (Array.isArray(n.autoSlots)) s.autoSlots = SLOTS.filter(x => n.autoSlots.includes(x));
       if (typeof n.autoLeftover === 'boolean') s.autoLeftover = n.autoLeftover;
       if (typeof n.photos === 'boolean') s.photos = n.photos;
+      if (typeof n.woki === 'boolean') s.woki = n.woki;
+      if (n.remind === null || (typeof n.remind === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(n.remind))) s.remind = n.remind;
+      if (typeof n.tz === 'string' && n.tz.length <= 64) { try { new Intl.DateTimeFormat('en', { timeZone: n.tz }); s.tz = n.tz; } catch {} }
       if (n.profile === null) s.profile = null;
       else if (n.profile && typeof n.profile === 'object') {
         const p = n.profile, within = (v, lo, hi) => (Number(v) >= lo && Number(v) <= hi ? Math.round(Number(v) * 10) / 10 : bad('Bitte die Angaben prüfen.'));
@@ -206,7 +253,7 @@ export function createApi(db, cfg = {}) {
       db.run('UPDATE users SET pass = ? WHERE id = ?', await hashPassword(b.password), c.user.id);
       db.run('DELETE FROM sessions WHERE user_id = ? AND token != ?', c.user.id, sha(c.token));
     }
-    return mePayload(db.get('SELECT * FROM users WHERE id = ?', c.user.id));
+    return mePayload(db.get('SELECT * FROM users WHERE id = ?', c.user.id), c.today);
   });
 
   // ---------- Haushalt ----------
@@ -222,11 +269,11 @@ export function createApi(db, cfg = {}) {
       if (['equal', 'usage'].includes(n.split)) s.split = n.split;
       db.run('UPDATE households SET settings = ? WHERE id = ?', JSON.stringify(s), c.hh.id);
     }
-    return mePayload(c.user);
+    return mePayload(c.user, c.today);
   });
   route('POST', '/api/household/invite', c => {
     db.run('UPDATE households SET invite = ? WHERE id = ?', inviteCode(), c.hh.id);
-    return mePayload(c.user);
+    return mePayload(c.user, c.today);
   });
   route('POST', '/api/household/join', c => {
     const target = db.get('SELECT * FROM households WHERE invite = ?', text(c.body.code, 16).toUpperCase()) || bad('Diesen Einladungscode gibt es nicht.', 404);
@@ -236,7 +283,7 @@ export function createApi(db, cfg = {}) {
       for (const hhId of [c.hh.id, target.id]) swipe.replan(hhId, c.today, c.user.id);
     });
     for (const m of membersOf(db, target.id)) if (m.id !== c.user.id) notify(m.id, c.user.id, 'household', c.user.display + ' ist eurem Haushalt beigetreten.');
-    return mePayload(db.get('SELECT * FROM users WHERE id = ?', c.user.id));
+    return mePayload(db.get('SELECT * FROM users WHERE id = ?', c.user.id), c.today);
   });
   route('POST', '/api/household/leave', c => {
     if (c.members.length < 2) bad('Du bist allein in diesem Haushalt.');
@@ -245,7 +292,7 @@ export function createApi(db, cfg = {}) {
       moveUser(db, c.user, own, c.today);
       for (const hhId of [c.hh.id, own]) swipe.replan(hhId, c.today, c.user.id);
     });
-    return mePayload(db.get('SELECT * FROM users WHERE id = ?', c.user.id));
+    return mePayload(db.get('SELECT * FROM users WHERE id = ?', c.user.id), c.today);
   });
 
   // ---------- Gerichte ----------
@@ -491,7 +538,7 @@ export function createApi(db, cfg = {}) {
       return db.run('UPDATE meal_eaters SET eaten = ? WHERE meal_id = ? AND user_id = ?', c.body.eaten ? 1 : 0, m.id, c.user.id);
     });
     if (!r.changes) bad('Du isst bei dieser Mahlzeit nicht mit.');
-    return { meal: oneMeal(c, m.id) };
+    return { meal: oneMeal(c, m.id), woki: wokiOf(c.user, c.today) };
   });
 
   // ---------- Anders gegessen ----------
@@ -862,7 +909,9 @@ export function createApi(db, cfg = {}) {
 
   // ---------- Dispatcher ----------
   const serverToday = () => { const n = new Date(); return L.isoOf(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate())); };
-  return async function handle({ method, path, query, body, token }) {
+  handle.remind = remind;
+  return handle;
+  async function handle({ method, path, query, body, token }) {
     for (const r of routes) {
       if (r.method !== method) continue;
       const m = r.re.exec(path);

@@ -551,3 +551,55 @@ test('Fotos: Kopieren, Umzug und Löschen', async () => {
   await one.del(`/api/dishes/${used}`);
   assert.equal(count(used), 1);
 });
+
+test('Woki: Verfassung in /api/me und beim Abhaken, Einstellungen, abschaltbar', async () => {
+  const dora = client();
+  const D = await dora.post('/api/register', { name: 'wokitest', display: 'Wiebke', password: 'geheim-geheim' });
+  // Neues Konto: Woki ist gut drauf, nicht am Ende
+  assert.equal(D.woki.stage, 4);
+  assert.equal(D.woki.counts.days, 0);
+  assert.equal(D.user.settings.remind, '19:00');
+  const dish = (await dora.get('/api/dishes')).dishes.find(d => d.slot === 'dinner');
+  const meal = (await dora.post('/api/meals', { date: today, slot: 'dinner', dishId: dish.id, eaters: [{ userId: D.user.id, portions: 1 }] })).meal;
+  const r = await dora.post(`/api/meals/${meal.id}/eaten`, { eaten: true, today });
+  assert.ok(r.woki.today.eaten >= 1);
+  assert.equal((await dora.get('/api/woki')).woki.today.eaten, r.woki.today.eaten);
+
+  const s = (await dora.patch('/api/me', { settings: { remind: '25:00', tz: 'Mars/Olympus' } })).user.settings;
+  assert.equal(s.remind, '19:00');
+  assert.equal(s.tz, null);
+  const s2 = (await dora.patch('/api/me', { settings: { remind: '07:30', tz: 'Europe/Berlin' } })).user.settings;
+  assert.equal(s2.remind, '07:30');
+  assert.equal(s2.tz, 'Europe/Berlin');
+  const off = await dora.patch('/api/me', { settings: { woki: false, remind: null } });
+  assert.equal(off.woki, null);
+  assert.equal(off.user.settings.remind, null);
+});
+
+test('Woki-Erinnerung: ab der Uhrzeit, höchstens einmal am Tag, nur mit etwas zu sagen', async () => {
+  const eve = client();
+  const E = await eve.post('/api/register', { name: 'remindtest', display: 'Rita', password: 'geheim-geheim' });
+  await eve.patch('/api/me', { settings: { tz: 'UTC', remind: '19:00' } });
+  const ua = crypto.createECDH('prime256v1'); ua.generateKeys();
+  const auth = crypto.randomBytes(16);
+  await eve.post('/api/push/subscribe', { endpoint: 'https://push.test/eve', keys: { p256dh: ua.getPublicKey().toString('base64url'), auth: auth.toString('base64url') } });
+  const at = (h, m = 0) => new Date(Date.parse(today + 'T00:00:00Z') + (h * 60 + m) * 60000);
+  const mine = list => list.filter(x => x.userId === E.user.id);
+
+  assert.equal(mine(await server.remind(at(18, 59))).length, 0); // noch zu früh
+  pushed.length = 0;
+  const sent = mine(await server.remind(at(19, 30)));
+  assert.equal(sent.length, 1);
+  assert.match(sent[0].msg, /noch nichts eingetragen/);
+  const body = pushed.find(p => p.url === 'https://push.test/eve');
+  const msg = JSON.parse(decrypt(body.init.body, ua.getPrivateKey(), auth));
+  assert.equal(msg.tag, 'woki');
+  assert.equal(msg.url, '/#today');
+  assert.equal(mine(await server.remind(at(20))).length, 0); // heute schon erinnert
+  // Erinnerungen landen nicht unter Neuigkeiten
+  assert.equal((await eve.get('/api/people')).notifications.filter(n => n.kind === 'woki').length, 0);
+
+  // Am nächsten Tag zu spät (mehr als drei Stunden nach der Uhrzeit): nichts nachholen
+  const late = new Date(at(23, 30).getTime() + 86400000);
+  assert.equal(mine(await server.remind(late)).length, 0);
+});

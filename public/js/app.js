@@ -1,5 +1,5 @@
 // Start, Anmeldung, Navigation und zentrale Ereignisbehandlung.
-import { S, get, post, esc, ico, toast, fail, todayISO, loadDishes, setUnauthorized, currentSheet, closeSheet, drawSheet, openSheet } from './core.js';
+import { S, get, post, patch, esc, ico, toast, fail, todayISO, loadDishes, setUnauthorized, currentSheet, closeSheet, drawSheet, openSheet } from './core.js';
 import { woki } from './woki.js';
 import today from './today.js';
 import plan from './plan.js';
@@ -72,6 +72,11 @@ async function enter(me, fresh) {
   else if (fresh) openGoalSheet({ intro: 'Willkommen! Damit die App weiß, wie viel du am Tag brauchst, rechnen wir kurz deine Ziele aus.', onDone: openModeSheet });
   pendingJoin = '';
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').then(syncPush).catch(() => {});
+  // Zeitzone des Geräts melden, damit Wokis Erinnerung zur richtigen Uhrzeit kommt
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz && tz !== me.user.settings.tz) patch('/api/me', { settings: { tz } }).then(r => { if (S.me) S.me.user.settings.tz = r.user.settings.tz; }).catch(() => {});
+  } catch {}
 }
 function askJoin(code) {
   openSheet({

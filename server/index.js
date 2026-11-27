@@ -119,6 +119,7 @@ export function createServer(opts = {}) {
     serveFile(res, path.extname(file) ? file : path.join(root, 'public', 'index.html'), req.method);
   });
   server.db = db;
+  server.remind = now => api.remind(now); // Woki-Erinnerungen, siehe api.js
   return server;
 }
 
@@ -129,6 +130,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     vapidSubject: process.env.VAPID_SUBJECT, trustProxy: process.env.TRUST_PROXY === '1'
   });
   server.listen(port, process.env.HOST || '0.0.0.0', () => console.log('SlopWok läuft auf http://localhost:' + port));
+  setInterval(() => { try { server.remind(); } catch (e) { console.error('Erinnerungen:', e.message); } }, 60000);
   const stop = () => server.close(() => { server.db.close(); process.exit(0); });
   process.on('SIGINT', stop); process.on('SIGTERM', stop);
 }

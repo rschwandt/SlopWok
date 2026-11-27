@@ -13,7 +13,9 @@ const WD = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 export const DEFAULT_USER = {
   pGoal: 130, kGoal: 2800, portion: 1, share: 'household', nudge: true,
   mode: 'manual', autoSlots: ['breakfast', 'lunch', 'snack', 'dinner'], autoLeftover: true, profile: null,
-  photos: false // Fotos zu Gerichten gibt es nur für die, die sie unter Einstellungen › Optionen einschalten
+  photos: false, // Fotos zu Gerichten gibt es nur für die, die sie unter Einstellungen › Optionen einschalten
+  // Woki zeigt, wie man isst; remind: Uhrzeit der täglichen Erinnerung (null = aus), tz: Zeitzone des Geräts
+  woki: true, remind: '19:00', tz: null
 };
 export const DEFAULT_HH = { shopDays: [0, 2, 5], split: 'equal' };
 export const userSettings = u => ({ ...DEFAULT_USER, ...JSON.parse(u.settings || '{}') });

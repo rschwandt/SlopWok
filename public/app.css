@@ -311,6 +311,65 @@ label.pick.busy { color: var(--muted); cursor: default; }
   @keyframes wobble { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-6deg); } 75% { transform: rotate(6deg); } }
 }
 
+/* Woki mit Verfassung (wokiLive in woki.js): Stufen st-top … st-wrecked, Zubehör und Laster */
+:root { --rust: #8B5E3C; --ember: #E0703A; --cig: #FFFBF8; --can: #D6A82C; --can-band: #6B4A1E; --can-top: #B9BEC4; --fries: #F2C14E; --box: #C8382E; }
+@media (prefers-color-scheme: dark) { :root { --rust: #C99A74; --ember: #F08A50; --cig: #F1E6E3; --can: #E3B947; --can-band: #8A6428; --can-top: #D5D9DE; --fries: #F5CE6A; --box: #E0574B; } }
+.wk-band { fill: var(--accent); } .wk-band-s { stroke: var(--accent); }
+.wk-cheek-s { stroke: var(--accent); }
+.wk-steam { fill: var(--steam); }
+.wk-rust { fill: var(--rust); opacity: .55; }
+.wk-cig { fill: var(--cig); } .wk-ember { fill: var(--ember); }
+.wk-can { fill: var(--can); color: var(--cig); } .wk-can-band { fill: var(--can-band); } .wk-can-top { fill: var(--can-top); }
+.wk-fries { fill: var(--fries); } .wk-box { fill: var(--box); } .wk-box-s { stroke: var(--fries); }
+.wk-smoke-s { stroke: var(--muted); }
+.woki.st-sad { filter: saturate(.7); }
+.woki.st-wrecked { filter: saturate(.6) brightness(.95); }
+
+.woki-hero { display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 6px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); width: 100%; text-align: left; color: var(--ink); }
+.woki-hero.st-top { background: var(--primary-soft); }
+.woki-hero .woki { width: 104px; height: auto; }
+.woki-hero > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; }
+.woki-hero .eyebrow { display: flex; align-items: center; gap: 8px; }
+.pips { display: inline-flex; gap: 3px; }
+.pips i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+.pips i.on { background: var(--primary); }
+.st-sad .pips i.on, .st-wrecked .pips i.on { background: var(--accent); }
+.bubble { position: relative; background: var(--steam-soft); border-radius: 14px; padding: 8px 12px; font-size: 0.93rem; line-height: 1.35; }
+.bubble::before { content: ""; position: absolute; left: -7px; top: 14px; border: 7px solid transparent; border-left: 0; border-right-color: var(--steam-soft); }
+.woki-sheet { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.woki-sheet .woki { width: 180px; height: auto; }
+.woki-bars { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; align-items: end; height: 96px; padding-top: 6px; }
+.woki-bars span { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; height: 100%; font-size: 0.72rem; color: var(--muted); }
+.woki-bars i { width: 100%; max-width: 30px; border-radius: 6px 6px 3px 3px; background: var(--primary); min-height: 3px; }
+.woki-bars i.low { background: var(--accent); }
+.woki-bars i.none { background: none; border: 1.5px dashed var(--line); height: 40%; }
+.woki-bars .today { font-weight: 700; color: var(--ink); }
+.woki-facts { display: flex; flex-direction: column; gap: 6px; }
+.woki-facts div { display: flex; justify-content: space-between; gap: 10px; font-size: 0.93rem; }
+.woki-facts b { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .woki.live .wk-all { transform-box: fill-box; transform-origin: 50% 100%; animation: breathe 3.2s ease-in-out infinite; }
+  .woki.live.st-sad .wk-all, .woki.live.st-wrecked .wk-all { animation-duration: 5s; }
+  @keyframes breathe { 50% { transform: scale(1.025, .97); } }
+  .woki.live .wk-steam { transform-box: fill-box; transform-origin: 50% 100%; animation: steam 2.4s ease-in-out infinite; }
+  @keyframes steam { 50% { transform: translateY(-4px) scaleX(1.06); opacity: .65; } }
+  .woki.live .wk-spark path { transform-box: fill-box; transform-origin: center; animation: twinkle 1.8s ease-in-out infinite; }
+  .woki.live .wk-spark g:nth-child(2) path { animation-delay: .6s; }
+  .woki.live .wk-spark g:nth-child(3) path { animation-delay: 1.2s; }
+  @keyframes twinkle { 0%, 100% { opacity: .25; transform: scale(.6) rotate(0); } 50% { opacity: 1; transform: scale(1.15) rotate(45deg); } }
+  .woki.live .wk-tear { animation: tear 2.8s ease-in infinite; }
+  @keyframes tear { 0%, 15% { opacity: 0; transform: translateY(-3px); } 30% { opacity: 1; } 85% { opacity: 1; transform: translateY(7px); } 100% { opacity: 0; transform: translateY(9px); } }
+  .woki.live .wk-smoke path { stroke-dasharray: 7 5; animation: smoke 1.4s linear infinite, puff 2.8s ease-in-out infinite; }
+  @keyframes smoke { to { stroke-dashoffset: -24; } }
+  @keyframes puff { 50% { opacity: .45; } }
+  /* Abgehakt oder eine Stufe besser: Woki hüpft. Eine Stufe schlechter: er sackt zusammen. */
+  .woki.live.cheer .wk-all { animation: hop .8s cubic-bezier(.3, 1.5, .5, 1) 1; }
+  @keyframes hop { 0% { transform: none; } 20% { transform: scale(1.06, .9); } 45% { transform: translateY(-14%) scale(.96, 1.05); } 70% { transform: scale(1.04, .95); } 100% { transform: none; } }
+  .woki.live.sink .wk-all { animation: sink 1.1s ease-in-out 1; }
+  @keyframes sink { 40% { transform: translateY(5%) scale(1.06, .88); } 100% { transform: none; } }
+}
+
 /* Anders gegessen: Größenregler und Hinweis an der Mahlzeit */
 .range { width: 100%; margin: 10px 0 2px; accent-color: var(--primary); min-height: 32px; }
 .range-ticks { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); }

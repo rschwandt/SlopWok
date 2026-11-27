@@ -105,6 +105,10 @@ CREATE TABLE IF NOT EXISTS swipes (
   liked INTEGER NOT NULL, spent INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (user_id, week, dish_id)
 );
+-- Tag der letzten Woki-Erinnerung je Person (in deren Zeitzone), damit pro Tag höchstens eine kommt
+CREATE TABLE IF NOT EXISTS woki_reminders (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, date TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL);
 `;
 

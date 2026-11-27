@@ -26,6 +26,11 @@ einen veganen High-Protein-Monatsplan; dessen 41 Gerichte sind als Startbiblioth
   Ungeplantes, wahlweise als Extra oder als noch freie Mahlzeit. Richtwerte: `shared/estimates.js`.
 - **Fortschritt:** Protein- und Kalorienziel pro Tag, Wochenübersicht, Serie. Sichtbar für niemanden, den Haushalt oder
   alle – jede Person entscheidet selbst. Wer sichtbar ist, kann angestupst werden (In-App und per Push).
+- **Woki als Begleiter:** Woki zeigt auf „Heute“, wie man in den letzten 7 Tagen gegessen hat: eingetragen, Proteinziel,
+  Kalorien im Rahmen (neuere Tage zählen mehr). Fünf Stufen von „In Topform“ (sieht aus wie das eigene Ziel: Stirnband,
+  Bizeps …) bis „Am Ende“ (raucht, Bierdose und Pommes, Rostflecken). Wer oft zu wenig isst, macht ihn dünn, wer oft zu viel isst, breit. Beim
+  Abhaken hüpft er, beim Aufstieg gibt es eine kleine Feier. Dazu eine tägliche Erinnerung per Push zur gewählten Uhrzeit,
+  nur wenn es etwas zu sagen gibt. Beides unter Einstellungen › Optionen abschaltbar. Logik: `shared/woki-state.js`.
 - **Gerichte:** Von Hand anlegen oder als JSON importieren, das ein KI-Assistent ausfüllt:
   [docs/gerichte-format.md](docs/gerichte-format.md). Importierte Gerichte verlinken auf ihre Originalseite, wenn die Quelle
   bekannt ist (für Bilder und Details).
@@ -81,10 +86,12 @@ server/photo.js    Fotos prüfen und von Metadaten befreien (JPEG, ohne Fremdbib
 server/push.js     Web Push (VAPID + aes128gcm) ohne Fremdbibliothek
 shared/dish.js     Gerichteformat: Prüfung, Import, LLM-Prompt (läuft in Browser und Server)
 shared/estimates.js Richtwerte für „Anders gegessen“
+shared/woki-state.js Wokis Verfassung: Wertung, Stufe, Form, Sprüche und Erinnerungstexte
 public/            die Web-App (ES-Module, kein Framework)
 public/js/estimate.js Nährwerte schätzen (Anders gegessen, Extras)
 public/js/photo.js Fotos anzeigen, verkleinern, hochladen
-public/js/woki.js  Woki, das Maskottchen (SVG, drei Stimmungen); Quelle für die App-Icons
+public/js/woki.js  Woki, das Maskottchen (SVG): drei feste Stimmungen (Quelle für die App-Icons) und wokiLive mit Verfassung
+public/js/wokiui.js Woki-Karte auf „Heute“, Blatt mit den letzten Tagen, Hüpfen und Zusammensacken
 tools/build-seed.mjs  erzeugt server/seed.json aus der ursprünglichen Einzelnutzer-App
 tools/build-icons.mjs erzeugt public/icons/ aus woki.js (braucht rsvg-convert)
 ```
@@ -102,7 +109,7 @@ tools/build-icons.mjs erzeugt public/icons/ aus woki.js (braucht rsvg-convert)
 Woki's Teahouse: Pfirsichblüten-Papier, Seladon-Glasur, Porzellanblau und ein Zinnober-Siegel. Woki, der Wok mit
 Gesicht, ist Logo und App-Icon und meldet sich in drei Stimmungen: fröhlich (Kopf, Anmeldung), angestupst
 (Anstupser auf „Heute", in „Neuigkeiten" und als Push-Symbol) und müde (alles gegessen, oder abends nichts mehr
-geplant). Farben stehen als Variablen oben in `public/app.css`; Textfarben haben eigene `*-ink`-Varianten mit
+geplant). Mit eingeschalteter Verfassung ersetzt die Woki-Karte auf „Heute“ die beiden letzten. Farben stehen als Variablen oben in `public/app.css`; Textfarben haben eigene `*-ink`-Varianten mit
 ausreichend Kontrast.
 
 Schriften: Zen Old Mincho und Zen Maru Gothic, lokal ausgeliefert (nur der lateinische Zeichensatz). Das Siegel

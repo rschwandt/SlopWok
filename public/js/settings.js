@@ -58,10 +58,23 @@ async function load() { S.me = await get('/api/me'); await pushStatus(); }
 
 const seg = (act, value, options) => '<div class="seg">' + options.map(([v, t, d]) => '<button data-act="' + act + '" data-v="' + v + '" aria-pressed="' + (value === v) + '"><b>' + t + '</b><small>' + d + '</small></button>').join('') + '</div>';
 
+const sw = (act, on, title, text) => '<button class="opt" role="switch" aria-checked="' + on + '" data-act="' + act + '">' +
+  '<span class="opt-text"><b>' + title + '</b><small>' + text + '</small></span><span class="switch" aria-hidden="true"></span></button>';
+
+// Woki als Begleiter: Verfassung zeigen und tägliche Erinnerung per Push
+function renderWoki(s) {
+  const remindOn = !!s.remind;
+  return '<div class="card"><h2>Woki</h2>' +
+    sw('wokiOn', s.woki, 'Woki zeigt, wie du isst', 'Isst du nach deinem Ziel, ist Woki in Topform. Lässt du es schleifen, wird er dünn oder breit, traurig und fängt irgendwann an zu rauchen.') +
+    (s.woki ? '' : '<p class="note">Ausgeschaltet bleibt Woki immer fröhlich. Das kann sinnvoll sein, wenn dir so ein Spiegel nicht guttut.</p>') +
+    sw('remindOn', remindOn, 'Tägliche Erinnerung', 'Woki meldet sich per Push, wenn du heute noch nichts eingetragen hast, Protein fehlt oder deine Serie reißt. Sonst bleibt er still.') +
+    (remindOn ? '<div class="field"><label for="s-remind">Uhrzeit</label><input id="s-remind" type="time" data-change="remind" value="' + esc(s.remind) + '"></div>' : '') +
+    (remindOn && push.state !== 'on' ? '<p class="note">Erinnerungen kommen als Push-Benachrichtigung. Schalte sie unter <b>Allgemein › Benachrichtigungen</b> auf diesem Gerät ein.</p>' : '') + '</div>';
+}
+
 // Zusatzfunktionen, die man bewusst einschaltet
 function renderOptions(s) {
-  return '<div class="card"><button class="opt" role="switch" aria-checked="' + s.photos + '" data-act="photos">' +
-    '<span class="opt-text"><b>Fotos zu Gerichten</b><small>Fotos hinzufügen, ändern und bei den Gerichten sehen.</small></span><span class="switch" aria-hidden="true"></span></button>' +
+  return renderWoki(s) + '<div class="card">' + sw('photos', s.photos, 'Fotos zu Gerichten', 'Fotos hinzufügen, ändern und bei den Gerichten sehen.') +
     '<p class="note">Standardmäßig ausgeschaltet, gilt nur für dein Konto. ' + (solo() ? 'Deine Fotos sieht niemand außerhalb deines Haushalts.' : 'Ein Foto gehört eurem Haushalt: Alle dort, die Fotos eingeschaltet haben, sehen es und können es ändern. Andere Haushalte sehen es nicht.') +
     ' Standort und andere Metadaten werden beim Hochladen entfernt.</p></div>';
 }
@@ -140,6 +153,8 @@ const actions = {
     if (S.me.user.settings.photos) await loadDishes();
   },
   nudge: () => saveUser({ nudge: !S.me.user.settings.nudge }),
+  wokiOn: async () => { await saveUser({ woki: !S.me.user.settings.woki }); document.querySelector('[data-act="wokiOn"]')?.focus(); },
+  remindOn: async () => { await saveUser({ remind: S.me.user.settings.remind ? null : '19:00' }); document.querySelector('[data-act="remindOn"]')?.focus(); },
   split: el => saveHh({ split: el.dataset.v }),
   shopday: el => {
     const k = +el.dataset.k, cur = S.me.household.settings.shopDays;
@@ -156,9 +171,10 @@ const onChange = async el => {
   const v = Math.round(+el.value);
   if (el.dataset.change === 'pGoal' && v >= 20) await saveUser({ pGoal: v });
   if (el.dataset.change === 'kGoal' && v >= 800) await saveUser({ kGoal: v });
+  if (el.dataset.change === 'remind' && /^\d{2}:\d{2}$/.test(el.value)) { await saveUser({ remind: el.value }); toast('Woki meldet sich ab ' + el.value + ' Uhr'); }
 };
 const submit = {
   display: async d => { S.me = await patch('/api/me', { display: d.display }); toast('Gespeichert'); S.render(); },
   password: async (d, form) => { await patch('/api/me', d); pwMsg = 'Passwort geändert. Andere Geräte wurden abgemeldet.'; form.reset(); S.render(); }
 };
-export default { load, render, actions, submit, onChange, enter: () => { pwMsg = ''; tab = 'general'; } };
+export default { load, render, actions, submit, onChange, enter: () => { pwMsg = ''; tab = S.settingsTab || 'general'; S.settingsTab = null; } };

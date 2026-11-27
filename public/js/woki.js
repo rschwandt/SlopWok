@@ -54,3 +54,84 @@ export function woki(mood = 'happy', { cls = 'woki', label = '', colors = null, 
       '<path ' + f('glyph') + ' transform="translate(93.4 90.8) scale(.172)" d="' + SEAL + '"/></g>' : '') +
     '</svg>';
 }
+
+// ---------- Woki mit Verfassung (shared/woki-state.js) ----------
+// Fünf Stufen (wrecked, sad, meh, good, top), Breite w nach Kalorien (dünn < 1 < breit) und in Topform Zubehör
+// zum Ziel. Gruppen tragen Klassen (wk-steam, wk-smoke, wk-spark, wk-tear …), die app.css animiert.
+const STAGE_PARTS = {
+  top: {
+    steam: '<path class="wk-steam-s" fill="none" d="M30 44c0-10 14-10 14-2 0 5-7 5-7 1M50 38c2-13 22-13 22-3 0 6-8 6-8 1M76 44c3-10 16-9 16-2 0 4-6 4-6 1" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>',
+    face: '<path class="wk-face-s" fill="none" d="M41 70q5.5-6.5 11 0M68 70q5.5-6.5 11 0" stroke-width="3.4" stroke-linecap="round"/><path class="wk-face" d="M52 76h16q-1 8.5-8 8.5T52 76z"/>',
+    cheek: 0.85
+  },
+  good: {
+    steam: '<path class="wk-steam-s" fill="none" d="M52 46c0-11 16-12 16-3 0 5-7 5.5-7 1.5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>',
+    face: '<path class="wk-face-s" fill="none" d="M41 70q5.5-6.5 11 0M68 70q5.5-6.5 11 0" stroke-width="3.4" stroke-linecap="round"/><path class="wk-face-s" fill="none" d="M55 77q5 5 10 0" stroke-width="3" stroke-linecap="round"/>',
+    cheek: 0.6
+  },
+  meh: {
+    steam: '<path class="wk-steam-s" fill="none" d="M56 48c0-6 9-7 9-2" stroke-width="3" stroke-linecap="round"/>',
+    face: '<circle class="wk-face" cx="46.5" cy="69" r="3.4"/><circle class="wk-face" cx="73.5" cy="69" r="3.4"/><path class="wk-face-s" fill="none" d="M55 80h10" stroke-width="3" stroke-linecap="round"/>',
+    cheek: 0.45
+  },
+  sad: {
+    steam: '<path class="wk-steam-s" fill="none" d="M52 49c1-5 8-5 8 0M63 47c1-4 6-4 6 0" stroke-width="2.6" stroke-linecap="round"/>',
+    face: '<path class="wk-face-s" fill="none" d="M40 64l9-3M80 64l-9-3" stroke-width="2.6" stroke-linecap="round"/><circle class="wk-face" cx="46.5" cy="69.5" r="3"/><circle class="wk-face" cx="73.5" cy="69.5" r="3"/>' +
+      '<path class="wk-face-s" fill="none" d="M54 83q6-5.5 12 0" stroke-width="3" stroke-linecap="round"/>' +
+      '<g class="wk-tear"><path class="wk-steam" d="M44 74c-1.8 3-2.6 4.4-2.6 5.6a2.6 2.6 0 005.2 0c0-1.2-.8-2.6-2.6-5.6z"/></g>',
+    cheek: 0.3
+  },
+  wrecked: {
+    steam: '',
+    face: '<path class="wk-face" d="M41.5 68.5h10a5 5 0 01-10 0zM68.5 68.5h10a5 5 0 01-10 0z"/><path class="wk-face-s" fill="none" d="M41 69.5L52 68M68 68L79 69.5" stroke-width="2.4" stroke-linecap="round"/>' +
+      '<path class="wk-cheek-s" fill="none" opacity=".75" d="M42 77q4.5 2 9 0M69 77q4.5 2 9 0" stroke-width="2" stroke-linecap="round"/>' +
+      '<path class="wk-face-s" fill="none" d="M53 83q4.5-3 9-1.5" stroke-width="2.8" stroke-linecap="round"/>',
+    cheek: 0
+  }
+};
+const SPARK = 'M0-5L1.3-1.3 5 0 1.3 1.3 0 5-1.3 1.3-5 0-1.3-1.3z';
+
+/**
+ * Woki, wie es ihm gerade geht.
+ * @param {{key: string, w: number, goal: string, title?: string}|null} st  Verfassung; null = fröhlich wie bisher
+ * @param {{cls?: string, label?: string}} opts
+ */
+export function wokiLive(st, { cls = 'woki live', label = '' } = {}) {
+  const key = st && STAGE_PARTS[st.key] ? st.key : 'good', P = STAGE_PARTS[key];
+  const goal = st ? st.goal : 'keep', top = key === 'top';
+  // In Topform sieht Woki aus wie das Ziel: beim Abnehmen etwas schlanker, beim Zunehmen etwas runder
+  const w = Math.min(1.24, Math.max(0.72, (st ? st.w : 1) + (top && goal === 'lose' ? -0.06 : top && goal === 'gain' ? 0.08 : 0)));
+  const ys = w > 1 ? 1 + (w - 1) * 0.6 : 1, fw = (1 + w) / 2;
+  const hx = d => (60 + d * 50 * w).toFixed(1); // Henkelmitte links (-1) / rechts (1)
+
+  let body = '<circle class="wk-body-s" fill="none" cx="10" cy="60" r="6" stroke-width="4.5"/><circle class="wk-body-s" fill="none" cx="110" cy="60" r="6" stroke-width="4.5"/>' +
+    '<path class="wk-body" d="M15 60h90c0 21-20 37-45 37S15 81 15 60z"/><rect class="wk-body" x="13" y="55" width="94" height="8" rx="4"/>';
+  if (top && goal === 'lose') body += '<rect class="wk-band" x="13" y="55" width="94" height="8" rx="4"/><path class="wk-band-s" fill="none" d="M105 57l10-5M105 61l9 4" stroke-width="3.5" stroke-linecap="round"/>';
+  if (key === 'wrecked') body += '<circle class="wk-rust" cx="27" cy="71" r="3.2"/><circle class="wk-rust" cx="92" cy="84" r="2.3"/><circle class="wk-rust" cx="70" cy="93" r="1.8"/><circle class="wk-rust" cx="36" cy="89" r="1.5"/>';
+
+  let arms = '';
+  if (top && goal === 'muscle') for (const d of [-1, 1]) {
+    // Bizeps zeigen: Oberarm waagerecht nach außen, Unterarm nach oben, Muskel obendrauf
+    const x = +hx(d), e = x + d * 14;
+    arms += '<path class="wk-body-s" fill="none" d="M' + x + ' 60L' + e + ' 58L' + (e - d) + ' 43" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<circle class="wk-body" cx="' + (x + d * 7.5) + '" cy="55.5" r="4.8"/><circle class="wk-body" cx="' + (e - d) + '" cy="40" r="5.4"/>';
+  }
+
+  let extra = '';
+  // Am Ende: Bierdose links, Pommes-Schachtel rechts, Zigarette im Mundwinkel
+  if (key === 'wrecked') extra += '<g class="wk-props" transform="translate(0 -4)"><g transform="rotate(-8 -2 105)"><rect class="wk-can" x="-9" y="82" width="13" height="23" rx="2.2"/>' +
+    '<rect class="wk-can-band" x="-9" y="89" width="13" height="8"/><path class="wk-can" d="M-7 93.5h9" stroke-width="1.4" opacity=".6" stroke="currentColor"/><ellipse class="wk-can-top" cx="-2.5" cy="82.4" rx="6.5" ry="1.8"/></g>' +
+    [[104, 78, -8], [108, 75, -3], [112, 77, 4], [116, 79, 10], [110, 80, 0]].map(([x, y, r]) => '<rect class="wk-fries" x="' + x + '" y="' + y + '" width="3.4" height="16" rx="1" transform="rotate(' + r + ' ' + x + ' 94)"/>').join('') +
+    '<path class="wk-box" d="M100 87q11 7 22 0l-3 21h-16z"/><path class="wk-box-s" fill="none" d="M106 99h10" stroke-width="1.6" stroke-linecap="round"/></g>' +
+    '<g transform="rotate(9 62 81.5)"><rect class="wk-cig" x="62" y="79.8" width="20" height="3.6" rx="1"/><rect class="wk-ember" x="79.4" y="79.8" width="3.6" height="3.6" rx=".8"/></g>' +
+    '<g class="wk-smoke"><path class="wk-smoke-s" fill="none" d="M85 82c5-6-1-10 4-16s0-10 5-16 1-9 5-13" stroke-width="2.4" stroke-linecap="round"/></g>';
+  if (top) extra += '<g class="wk-spark">' + [[16, 34, 1], [104, 28, 0.85], [94, 12, 0.6]].map(([x, y, s]) => '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path class="wk-seal" d="' + SPARK + '"/></g>').join('') + '</g>';
+
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-12 4 144 112" class="' + cls + ' st-' + key + (st && st.shape ? ' ' + st.shape : '') + '"' +
+    (label ? ' role="img" aria-label="' + label + '"' : ' aria-hidden="true"') + '><g class="wk-all">' +
+    (P.steam ? '<g class="wk-steam">' + P.steam + '</g>' : '') +
+    '<g transform="translate(60 60) scale(' + w.toFixed(3) + ' ' + ys.toFixed(3) + ') translate(-60 -60)">' + body + '</g>' + arms +
+    '<g transform="translate(60 0) scale(' + fw.toFixed(3) + ' 1) translate(-60 0)">' +
+    (P.cheek ? '<circle class="wk-cheek" opacity="' + P.cheek + '" cx="35" cy="78" r="5"/><circle class="wk-cheek" opacity="' + P.cheek + '" cx="85" cy="78" r="5"/>' : '') + P.face + '</g>' +
+    extra + '</g></svg>';
+}
